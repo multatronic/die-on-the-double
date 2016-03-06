@@ -1,0 +1,17 @@
+<head>
+    <title ng-bind='applicationName'>Loading..</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <base href="/">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body layout="row" ng-controller='HomeCtrl'>
+    <ng-include src="'client/home/views/navigation-side.tpl.html'"></ng-include>
+
+    <section role="main" layout="column" flex>
+        <ng-include src="'client/home/views/navigation-top.tpl.html'"></ng-include>
+        <md-content flex layout-padding ui-view></md-content>
+    </section>
+</body>

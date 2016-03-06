@@ -1,0 +1,12 @@
+{
+  "name": "die-on-the-double",
+  "version": "0.0.1",
+  "dependencies": {
+    "angular-filter": "~0.5.8"
+  },
+  "ignoredDependencies": [
+    "jquery",
+    "angular"
+  ],
+  "private": true
+}
