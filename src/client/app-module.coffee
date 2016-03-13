@@ -9,6 +9,7 @@ angular
         'angularMoment'
         'home'
         'rooms'
+        'socket'
     ]
     .config [
         '$urlRouterProvider'

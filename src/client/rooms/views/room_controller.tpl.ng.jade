@@ -1,1 +1,6 @@
-h1 Controller
+form(name='controllerForm' ng-submit='joinRoom()' novalidate)
+    md-input-container(class='md-block')
+        label Your Name
+        input(ng-model='playerName' required)
+
+    md-button(type='submit' class='md-raised md-primary' ng-disabled='!controllerForm.$valid') Go!

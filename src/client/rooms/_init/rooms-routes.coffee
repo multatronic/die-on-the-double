@@ -7,13 +7,13 @@ angular
                 .state 'rooms',
                     url: '/rooms'
                     templateUrl: 'client/rooms/views/rooms.tpl.html'
-                    controller: 'RoomCtrl'
+                    controller: 'RoomsCtrl'
                     controllerAs: 'rooms'
-                .state 'rooms.show',
-                    url: '/:id'
-                    templateUrl: 'client/rooms/views/rooms.show.tpl.html'
+                .state 'room_display',
+                    url: '/rooms/:id'
+                    templateUrl: 'client/rooms/views/room_show.tpl.html'
                     controller: 'RoomCtrl'
-                    controllerAs: 'rooms'
+                    controllerAs: 'room'
                 .state 'room_controller',
                     url: '/controllers/:id'
                     templateUrl: 'client/rooms/views/room_controller.tpl.html'

@@ -6,3 +6,6 @@ Meteor
         # Meteor
         #     .methods
         #         myMethod: myMethod
+
+        console.log 'Clearing empty rooms'
+        Streamy.Rooms.clearEmpty()

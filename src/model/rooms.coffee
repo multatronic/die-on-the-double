@@ -1,4 +1,1 @@
-Rooms = new Mongo.Collection 'room'
-
-if Meteor.isServer
-    Rooms.remove {}
+Rooms = Streamy.Rooms.model
