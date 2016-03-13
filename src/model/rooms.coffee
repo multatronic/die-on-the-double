@@ -1,2 +1,4 @@
 Rooms = new Mongo.Collection 'room'
-Rooms.remove {}
+
+if Meteor.isServer
+    Rooms.remove {}

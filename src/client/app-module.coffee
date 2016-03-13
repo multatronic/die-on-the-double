@@ -8,6 +8,7 @@ angular
         'ui.router'
         'angularMoment'
         'home'
+        'rooms'
     ]
     .config [
         '$urlRouterProvider'
