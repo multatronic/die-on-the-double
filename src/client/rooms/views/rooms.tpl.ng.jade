@@ -1,1 +1,7 @@
 h1 Room list
+
+md-list
+    md-list-item(ng-repeat="room in rooms")
+      p room id: {{ room._id }}
+      p room name: {{ room.name }}
+      p n.o. sessions: {{ room.session_ids.length }}

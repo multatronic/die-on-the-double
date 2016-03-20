@@ -20,5 +20,8 @@ angular
                     icon: 'home',
                     label: 'Home'
                 ,
+                    state: 'rooms',
+                    icon: 'list',
+                    label: 'Rooms'
             ]
     ]
