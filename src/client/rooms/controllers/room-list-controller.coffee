@@ -2,13 +2,11 @@ angular
     .module 'rooms'
     .controller 'RoomListCtrl', [
         'RoomFactory'
-        (RoomFactory) ->
-            @rooms = []
-
-            @loadRoomList = () ->
-                @rooms = RoomFactory.getRoomList()
-                return
-
-            @loadRoomList()
+        '$scope'
+        (RoomFactory, $scope) ->
+            # get room list cursor and wrap it as an array
+            $scope.helpers
+                rooms: () ->
+                    RoomFactory.getRoomList()
             return
     ]

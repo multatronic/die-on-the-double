@@ -38,4 +38,3 @@ Streamy
     .on 'playerData', (data, socket) ->
         console.log "Player: Client '#{Streamy.id(socket)}' identified as player '#{data.name}' of type '#{data.type}'"
         socket._playerData = data
-
