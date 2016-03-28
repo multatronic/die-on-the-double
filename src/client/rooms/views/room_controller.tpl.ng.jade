@@ -1,4 +1,4 @@
-//- form(name='controllerForm' ng-submit='joinRoom()' novalidate)
+form(name='controllerForm' ng-submit='joinRoom()' novalidate)
 //-     md-input-container(class='md-block')
 //-         label Your Name
 //-         input(ng-model='playerName' required)
@@ -8,19 +8,19 @@
 div(flex layout='row' layout-align='space-around center')
     div
         div(layout='row' layout-align='center center')
-            md-button(class='md-fab')
+            md-button(class='md-fab controller-btn' ng-click='setPlayerDirection([0, 1])')
                 md-icon keyboard_arrow_up
         div
-            md-button(class='md-fab md-hue-2')
+            md-button(class='md-fab md-hue-2 controller-btn' ng-click='setPlayerDirection([-1, 0])')
                 md-icon keyboard_arrow_left
-            md-button(class='md-fab md-hue-2')
+            md-button(class='md-fab md-hue-2 controller-btn' ng-click='setPlayerDirection([1, 0])')
                 md-icon keyboard_arrow_right
         div(layout='row' layout-align='center center')
-            md-button(class='md-fab')
+            md-button(class='md-fab controller-btn' ng-click='setPlayerDirection([0, -1])')
                 md-icon keyboard_arrow_down
 
-    div
-        md-button(class='md-fab md-primary md-hue-2')
-            strong A
-        md-button(class='md-fab md-primary')
-            strong B
+    //- div
+    //-     md-button(class='md-fab md-primary md-hue-2')
+    //-         strong A
+    //-     md-button(class='md-fab md-primary')
+    //-         strong B

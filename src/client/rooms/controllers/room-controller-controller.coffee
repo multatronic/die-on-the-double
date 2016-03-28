@@ -18,5 +18,9 @@ angular
                 DataSocket
                     .joinRoom roomId, $scope.playerName, clientType = clientType
 
+            $scope.setPlayerVector = (vector) ->
+                DataSocket
+                    .emit 'setPlayerVector', vector
+
             $scope.joinRoom()
     ]
