@@ -1,3 +1,8 @@
+###
+Data exchange logic. Deals with notifications, exchanging player info, etc.
+Also deals with triggering new events.
+###
+
 # Deal with socket data coming from displays or controllers
 Streamy
     .onConnect (socket) ->
@@ -32,6 +37,9 @@ Streamy
             if otherRoom.name != room
                 Streamy.leave otherRoom.name, socket
 
+        # Game join handler
+        Game.onPlayerRoomJoin socket._playerData, room
+
 originalStreamyOnLeave = Streamy.Rooms.onLeave
 Streamy
     .Rooms
@@ -48,10 +56,14 @@ Streamy
                 room: room
                 player: socket._playerData
 
+        # Game leave handler
+        Game.onPlayerRoomLeave socket._playerData, room
+
 Streamy
     .on 'playerData', (data, socket) ->
         console.log "Player: Client '#{Streamy.id(socket)}' identified as player '#{data.name}' of type '#{data.type}'"
         socket._playerData = data
+        socket._playerData.id = Streamy.id socket
 
         # Notify all rooms this player is in about the updated player data
         for room in Streamy.Rooms.allForSession(Streamy.id(socket)).fetch()

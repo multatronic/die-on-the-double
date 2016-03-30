@@ -7,5 +7,5 @@ Meteor
         #     .methods
         #         myMethod: myMethod
 
-        console.log 'Clearing empty rooms'
-        Streamy.Rooms.clearEmpty()
+        console.log 'Removing all outdated rooms'
+        Streamy.Rooms.model.remove({})
