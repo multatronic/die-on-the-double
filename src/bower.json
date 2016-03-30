@@ -2,11 +2,20 @@
   "name": "die-on-the-double",
   "version": "0.0.1",
   "dependencies": {
-    "angular-filter": "~0.5.8"
+    "angular-filter": "~0.5.8",
+    "voxel.css": "hunterlarco/voxel.css#~1.1.0"
   },
   "ignoredDependencies": [
     "jquery",
     "angular"
   ],
+  "overrides": {
+    "voxel.css": {
+      "main": [
+        "./dist/voxel.js",
+        "./dist/voxelcss.js"
+      ]
+    }
+  },
   "private": true
 }
