@@ -4,7 +4,6 @@ angular
         'ngAria'
         'ngMaterial'
         'angular-meteor'
-        'angular.filter'
         'ui.router'
         'angularMoment'
         'home'
