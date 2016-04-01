@@ -1,3 +1,6 @@
+uuid = Npm.require 'node-uuid'
+md5 = Npm.require 'md5'
+
 ###
 Main DotD server-side logic, unrelated to general
 functioning of data socket
@@ -14,12 +17,12 @@ not to exist.
 Game.rooms = {}
 
 
-class Game.RoomState
+class Game.State
 
     ###
-    Room states. Each room is started as "STOPPED",
-    turns "ACTIVE" once the round begins and can
-    be "PAUSED".
+    Generic states. Generally a 'stateful' object starts
+    out as "STOPPED", turns "ACTIVE" and can
+    be "PAUSED" if need be.
     ###
 
     @STOPPED = 0
@@ -49,7 +52,7 @@ class Game.Room
 
     Only modify with `setState` to avoid breakage.
     ###
-    state: Game.RoomState.STOPPED
+    state: Game.State.STOPPED
 
     ###
     Current players.
@@ -146,6 +149,137 @@ class Game.Player
         console.log "Creating player '#{@name}' with ID '#{@id}'"
 
 
+class Game.Identifiable
+
+    ###
+    Base class for objects which should contain
+    instance-specific identifiers.
+    ###
+
+    ###
+    "Unique" ID of this object.
+    ###
+    _id: null
+
+    ###
+    Constructor.
+    ###
+    constructor: () ->
+        @_id = md5 uuid.v1()
+
+
+class Game.Loggable extends Game.Identifiable
+
+    ###
+    Base class for objects which should be able to produce
+    instance-specific logs.
+    ###
+
+    log: (args...) ->
+        args[0] = "[#{@constructor.name}:#{@_id.substr(0, 8)}] " + args[0]
+        console.log.apply console.log, args
+
+
+class Game.StartStoppable extends Game.Loggable
+
+    ###
+    Base class for things which can be started or stopped.
+    ###
+
+    ###
+    Current state.
+
+    Only modify with `setState` to avoid breakage.
+    ###
+    state: Game.State.STOPPED
+
+    ###
+    Constructor.
+    ###
+    constructor: () ->
+        super
+
+        @log "Instantiating"
+
+    ###
+    Start the instance.
+    ###
+    start: () ->
+        @log "Starting"
+        @state = Game.State.ACTIVE
+
+    ###
+    Stop the instance.
+    ###
+    stop: () ->
+        @log "Stopping"
+        @state = Game.State.STOPPED
+
+
+class Game.EventManager extends Game.StartStoppable
+
+    ###
+    Game event manager. In charge of running the main
+    event loop, triggering periodic ticks and the like.
+    ###
+
+    ###
+    Event queue.
+    ###
+    events: []
+
+    ###
+    Delay inbetween loops triggered by
+    `loop_forever`, in ms.
+
+    @type integer
+    @see `loop_forever`
+    ###
+    loop_delay: 5
+
+    ###
+    {@inheritDoc}
+    ###
+    start: () ->
+        super
+
+        @loop_forever()
+
+    ###
+    Perform a single iteration of the event loop,
+    handling all events currently in the event queue.
+    ###
+    loop: () ->
+        while event = @events.shift()
+            @handle event
+
+    ###
+    Perform iterations of the event loop until
+    this instance is stopped.
+
+    @see `stop`
+    @see `loop`
+    ###
+    loop_forever: () ->
+        @loop()
+
+        if @state == Game.State.ACTIVE
+            setTimeout () =>
+                @loop_forever()
+            , @loop_delay
+
+    ###
+    Handle a single event.
+    ###
+    handle: (event) ->
+        # @TODO Implement further
+
+    ###
+    Dispatch a single event, placing it at the end of the event queue.
+    ###
+    dispatch: (event) ->
+        @events.push event
+
 ###
 When a player joins a room,
 create a room object if it doesn't yet exist.
@@ -196,3 +330,18 @@ Game.onPlayerRoomInput = (playerData, roomName, type, data) ->
         player = room.findPlayer playerData.id
 
     # @TODO Implement further
+
+
+###
+Start main game loop.
+###
+Game.events = new Game.EventManager
+Game.events.start()
+
+
+###
+Trigger a 'tick' periodically.
+###
+setInterval () ->
+    Game.events.dispatch 'tick'
+, 1000
