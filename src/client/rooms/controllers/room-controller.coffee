@@ -43,14 +43,12 @@ angular
                     tile = Crafty.e "2D, DOM, #{type}, Mouse"
                             .attr 'z',i+1 * y+1
                             # .areaMap [64,0],[128,32],[128,96],[64,128],[0,96],[0,32]
-                            .bind "Click", (e) ->
-                                $log.debug 'click detected'
+                            .bind "MouseUp", (e) ->
                                 # destroy on right click
-                                if e.button == 2
+                                if e.mouseButton == Crafty.mouseButtons.RIGHT
                                     this.destroy()
                                 return
                             .bind "MouseOver", () ->
-                                $log.debug 'mouse over detected'
                                 if this.has "grass"
                                     this.sprite 0,1,1,1
                                     return
@@ -58,7 +56,6 @@ angular
                                     this.sprite 1,1,1,1
                                     return
                             .bind "MouseOut", () ->
-                                $log.debug 'mouse out detected'
                                 if this.has "grass"
                                     this.sprite 0,0,1,1
                                     return
@@ -68,6 +65,7 @@ angular
 
                     iso.place i,y,0,tile
 
+            # these are dom events (not crafty.js ones) so don't capitalize them
             Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
                 return if e.button > 1
                 base = x: e.clientX, y: e.clientY

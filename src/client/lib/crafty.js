@@ -1023,11 +1023,6 @@ Crafty.extend({
         e.realY = y = Crafty.mousePos.y = pos.y;
 
         closest = Crafty.findClosestEntityByComponent("Mouse", x, y, tar);
-        console.log('MARK');
-        console.log(x);
-        console.log(y);
-        console.log(tar);
-        console.log(closest);
 
         //found closest object to mouse
         if (closest) {
