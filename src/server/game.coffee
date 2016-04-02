@@ -1,6 +1,7 @@
 uuid = Npm.require 'node-uuid'
 md5 = Npm.require 'md5'
 
+
 ###
 Main DotD server-side logic, unrelated to general
 functioning of data socket
@@ -49,6 +50,24 @@ class Game.Identifiable
         @_id = md5 uuid.v1()
 
 
+class Game.Event extends Game.Identifiable
+
+    ###
+    Game base event.
+    ###
+
+    @type: 'base'
+
+
+class Game.TickEvent extends Game.Event
+
+    ###
+    Game tick event.
+    ###
+
+    @type: 'tick'
+
+
 class Game.Loggable extends Game.Identifiable
 
     ###
@@ -56,8 +75,18 @@ class Game.Loggable extends Game.Identifiable
     instance-specific logs.
     ###
 
+    ###
+    Log a message.
+    ###
     log: (args...) ->
         args[0] = "[#{@constructor.name}:#{@_id.substr(0, 8)}] " + args[0]
+        console.log.apply console.log, args
+
+    ###
+    Log a message.
+    ###
+    @log: (args...) ->
+        args[0] = "[#{@name}] " + args[0]
         console.log.apply console.log, args
 
     ###
@@ -118,7 +147,7 @@ class Game.Level
     height: null
 
 
-class Game.Room
+class Game.Room extends Game.Loggable
 
     ###
     Room. A room contains a map, several players and so on
@@ -165,7 +194,9 @@ class Game.Room
     Constructor.
     ###
     constructor: (@id, @name) ->
-        console.log "Creating room '#{@name}' with ID '#{@id}'"
+        super
+
+        @log "Creating room '#{@name}' with ID '#{@id}'"
         Game.rooms[@id] = @
 
     ###
@@ -193,35 +224,35 @@ class Game.Room
     Add a player.
     ###
     addPlayer: (player) ->
-        console.log "Adding player '#{player.name}' to room '#{@name}'"
+        @log "Adding player '#{player.name}'"
         @players[player.id] = player
 
     ###
     Find a player by its primary identifier.
     ###
     findPlayer: (playerId) ->
-        console.log "Looking up player '#{playerId}'"
+        @log "Looking up player '#{playerId}'"
         @players[playerId]
 
     ###
     Remove a player.
     ###
     removePlayer: (player) ->
-        console.log "Removing player '#{player.name}' from room '#{@name}'"
+        @log "Removing player '#{player.name}'"
         delete @players[player.id]
 
     ###
     Find a room by its primary identifier.
     ###
     @find: (roomId) ->
-        console.log "Looking up room '#{roomId}'"
+        @log "Looking up room '#{roomId}'"
         Game.rooms[roomId]
 
     ###
     Attempt to remove a room.
     ###
     @remove: (room) ->
-        console.log "Removing room '#{room.name}'"
+        @log "Removing room '#{room.name}'"
         delete Game.rooms[room.name]
 
 
@@ -267,7 +298,9 @@ class Game.Player extends Game.Entity
     Constructor.
     ###
     constructor: (@id, @name) ->
-        console.log "Creating player '#{@name}' with ID '#{@id}'"
+        super
+
+        @log "Creating player '#{@name}' with ID '#{@id}'"
 
 
 class Game.EventManager extends Game.StartStoppable
@@ -294,7 +327,7 @@ class Game.EventManager extends Game.StartStoppable
     @type integer
     @see `loop_forever`
     ###
-    loop_delay: 5
+    loop_delay: 2
 
     ###
     {@inheritDoc}
@@ -331,8 +364,8 @@ class Game.EventManager extends Game.StartStoppable
     Handle a single event.
     ###
     handle: (event) ->
-        if @handlers[event.type]
-            for handler in @handlers[event.type]
+        if @handlers[event.constructor.type]
+            for handler in @handlers[event.constructor.type]
                 result = handler event
 
                 if result == false
@@ -349,9 +382,28 @@ class Game.EventManager extends Game.StartStoppable
     ###
     add_handler: (event, handler) ->
         if not @handlers[event.type]
-            @handlers[event.type]
+            @handlers[event.type] = []
 
         @handlers[event.type].push handler
+
+
+class Game.PhysicsEngine extends Game.StartStoppable
+
+    ###
+    Game physics engine. In charge of processing
+    positional updates, detecting collisions, etc.
+    ###
+
+    ###
+    Handle a tick event.
+    ###
+    on_tick: (event) =>
+        # For each room, increment the current server tick counter
+        # Once we reach the required amount of server ticks for a room
+        # tick, we reset the counter.
+        for id, room of Game.rooms
+            continue
+
 
 ###
 When a player joins a room,
@@ -411,10 +463,14 @@ Start main game loop.
 Game.events = new Game.EventManager
 Game.events.start()
 
+Game.physics = new Game.PhysicsEngine
+Game.events.add_handler Game.TickEvent, Game.physics.on_tick
+Game.physics.start()
+
 
 ###
 Trigger a 'tick' periodically.
 ###
 setInterval () ->
-    Game.events.dispatch 'tick'
-, 1000
+    Game.events.dispatch new Game.TickEvent
+, 200
