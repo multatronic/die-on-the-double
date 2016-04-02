@@ -37,7 +37,7 @@ angular
             placeTile = (i, y, z, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
                             .attr 'z',i+1 * y+1
-                            # .areaMap [64,0],[128,32],[128,96],[64,128],[0,96],[0,32]
+                            .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
                             .bind "MouseUp", (e) ->
                                 # destroy on right click
                                 if e.mouseButton == Crafty.mouseButtons.RIGHT
@@ -63,11 +63,11 @@ angular
 
             iso = Crafty.isometric.size 128
             z = 0
-            for i in [20...0]
+            for x in [20...0]
                 for y in [0...20]
                     which = Crafty.math.randomInt 0,10
                     type = if which > 5 then "grass" else "stone"
-                    placeTile(i, y, z, type)
+                    placeTile(x, y, z, type)
 
             # these are dom events (not crafty.js ones) so don't capitalize them
             Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
