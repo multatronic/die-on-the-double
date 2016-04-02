@@ -39,6 +39,16 @@ class Game.State
     @ACTIVE = 2
 
 
+class Game.ClientType
+
+    ###
+    Client types.
+    ###
+
+    @PLAYER = 'player'
+    @DISPLAY = 'display'
+
+
 class Game.Identifiable
 
     ###
@@ -49,13 +59,13 @@ class Game.Identifiable
     ###
     "Unique" ID of this object.
     ###
-    _id: null
+    id: null
 
     ###
     Constructor.
     ###
     constructor: () ->
-        @_id = md5 uuid.v1()
+        @id ?= md5 uuid.v1()
 
 
 class Game.Event extends Game.Identifiable
@@ -87,7 +97,7 @@ class Game.Loggable extends Game.Identifiable
     Log a message.
     ###
     log: (args...) ->
-        args[0] = "[#{@constructor.name}:#{@_id.substr(0, 8)}] " + args[0]
+        args[0] = "[#{@constructor.name}:#{@id.substr(0, 8)}] " + args[0]
         console.log.apply console.log, args
 
     ###
@@ -157,14 +167,9 @@ class Game.Level extends Game.Loggable
 class Game.Room extends Game.Loggable
 
     ###
-    Room. A room contains a map, several players and so on
+    Room. A room contains a level, clients, entities and so on
     and so forth.
     ###
-
-    ###
-    ID.
-    ###
-    id: null
 
     ###
     Name.
@@ -179,11 +184,18 @@ class Game.Room extends Game.Loggable
     state: Game.State.STOPPED
 
     ###
-    Current players.
+    Current clients.
 
-    Only modify with `addPlayer` and `removePlayer` to avoid breakage.
+    Only modify with `addClient` and `removeClient` to avoid breakage.
     ###
-    players: {}
+    clients: {}
+
+    ###
+    Current entities.
+
+    Only modify with `addEntity` and `removeEntity` to avoid breakage.
+    ###
+    entities: {}
 
     ###
     The current room level.
@@ -202,9 +214,6 @@ class Game.Room extends Game.Loggable
     ###
     constructor: (@id, @name) ->
         super
-
-        @log "Creating room '#{@name}' with ID '#{@id}'"
-        Game.rooms[@id] = @
 
         @level = new Game.Level [32, 32, 16]
 
@@ -230,26 +239,46 @@ class Game.Room extends Game.Loggable
         @level = level
 
     ###
-    Add a player.
+    Add a client.
     ###
-    addPlayer: (player) ->
-        @log "Adding player '#{player.name}'"
-        @players[player.id] = player
+    addClient: (client) ->
+        @log "Adding client '#{client.name}'"
+        @clients[client.id] = client
 
     ###
-    Find a player by its primary identifier.
+    Find a client by its primary identifier.
     ###
-    findPlayer: (playerId) ->
-        @log "Looking up player '#{playerId}'"
-        @players[playerId]
+    findClient: (clientId) ->
+        @log "Looking up client '#{clientId}'"
+        @clients[clientId]
 
+    ###
+    Remove a client.
+    ###
+    removeClient: (client) ->
+        @log "Removing client '#{client.name}'"
+        delete @clients[client.id]
 
     ###
-    Remove a player.
+    Add an entity.
     ###
-    removePlayer: (player) ->
-        @log "Removing player '#{player.name}'"
-        delete @players[player.id]
+    addEntity: (entity) ->
+        @log "Adding entity '#{entity.id}'"
+        @entities[entity.id] = entity
+
+    ###
+    Find an entity by its primary identifier.
+    ###
+    findEntity: (entityId) ->
+        @log "Looking up entity '#{entityId}'"
+        @entities[entityId]
+
+    ###
+    Remove an entity.
+    ###
+    removeEntity: (entity) ->
+        @log "Removing entity '#{entity.id}'"
+        delete @entities[entity.id]
 
     ###
     Find a room by its primary identifier.
@@ -263,7 +292,36 @@ class Game.Room extends Game.Loggable
     ###
     @remove: (room) ->
         @log "Removing room '#{room.name}'"
-        delete Game.rooms[room.name]
+        delete Game.rooms[room.id]
+
+
+class Game.Client extends Game.Loggable
+
+    ###
+    Game client. Can optionally be linked to a
+    game entity.
+    ###
+
+    ###
+    Name.
+
+    @type string
+    ###
+    name: null
+
+    ###
+    Type.
+
+    @type integer
+    @see `Game.ClientType`
+    ###
+    type: null
+
+    ###
+    {@inheritDoc}
+    ###
+    constructor: (@id, @name, @type) ->
+        super
 
 
 class Game.Entity extends Game.Loggable
@@ -294,29 +352,12 @@ class Game.Entity extends Game.Loggable
     direction: [0, 0, 0]
 
 
-class Game.Player extends Game.Entity
+class Game.SnakeEntity extends Game.Entity
 
     ###
-    Game player. Has an ID, a name, a score and a color.
+    Snake entity. The position is used as the
+    snake's front. Everything else is part of the position history.
     ###
-
-    ###
-    ID.
-    ###
-    id: null
-
-    ###
-    Name.
-    ###
-    name: null
-
-    ###
-    Constructor.
-    ###
-    constructor: (@id, @name) ->
-        super
-
-        @log "Creating player '#{@name}' with ID '#{@id}'"
 
 
 class Game.EventManager extends Game.StartStoppable
@@ -420,10 +461,10 @@ class Game.PhysicsEngine extends Game.StartStoppable
     Handle a room tick.
     ###
     onRoomTick: (event, room) ->
-        for id, player of room.players
-            oldPosition = player.position[..]
-            position = player.position
-            direction = player.direction
+        for id, entity of room.entities
+            oldPosition = entity.position[..]
+            position = entity.position
+            direction = entity.direction
 
             # Increment x, y and z positioning by direction
             # vector value
@@ -433,64 +474,82 @@ class Game.PhysicsEngine extends Game.StartStoppable
                 # Reset axis position when exceeding level
                 # axis size
                 if position[i] < 0
-                    position[i] = room.level.size[i]
-                else if position[i] > room.level.size[i]
+                    position[i] = room.level.size[i] - 1
+                else if position[i] > (room.level.size[i] - 1)
                     position[i] = 0
 
-            player.positionHistory.pop()
-            player.positionHistory.unshift oldPosition
+            entity.positionHistory.unshift oldPosition
+            entity.positionHistory.pop()
 
 
 ###
-When a player joins a room,
+When a client joins a room,
 create a room object if it doesn't yet exist.
-Add the player to the room they've joined.
+Create a new client object and add it to the room
+as well. In the case of a player joining,
+create a new entity and link it to the client.
 ###
-Game.onPlayerRoomJoin = (playerData, roomName) ->
+Game.onRoomJoin = (clientData, roomName) ->
     room = Game.Room.find roomName
 
     if not room
         room = new Game.Room roomName, roomName
+        Game.rooms[room.id] = room
 
-    player = room.findPlayer playerData.id
+    client = room.findClient clientData.id
 
-    if not player
-        player = new Game.Player playerData.id, playerData.name
+    if not client
+        client = new Game.Client clientData.id, clientData.name, clientData.type
 
-    room.addPlayer player
+        # If this client is a player, create a player entity
+        # and link the client and the player entity
+        if clientData.type == Game.ClientType.PLAYER
+            entity = new Game.SnakeEntity
+            client.entity = entity
+            room.addEntity entity
+
+        room.addClient client
 
 
 ###
-When a player leaves a room,
+When a client leaves a room,
 remove them from the room they're leaving
 and remove the room entirely if they were the
-last player.
+last client. If they had a linked entity,
+remove said entity as well.
 ###
-Game.onPlayerRoomLeave = (playerData, roomName) ->
+Game.onRoomLeave = (clientData, roomName) ->
     room = Game.Room.find roomName
 
     if room
-        player = room.findPlayer playerData.id
+        client = room.findClient clientData.id
 
-        if player
-            room.removePlayer player
+        if client
+            # If this client has a linked entity (eg. due to being a player),
+            # remove that entity from the room as well
+            if client.entity
+                room.removeEntity client.entity
 
-    if not room.players.length
+            room.removeClient client
+
+    if not (Object.keys room.clients).length
         Game.Room.remove room
 
 
 ###
-When a player sends input to a room,
+When a client sends input to a room,
 perform different actions depending on the type
 of input.
 ###
-Game.onPlayerRoomInput = (playerData, roomName, type, data) ->
+Game.onRoomInput = (clientData, roomName, type, parameters) ->
     room = Game.Room.find roomName
 
     if room
-        player = room.findPlayer playerData.id
+        client = room.findClient clientData.id
 
-    # @TODO Implement further
+        if client
+            if type == 'setDirection'
+                client.entity.direction = parameters.direction
 
 
 ###

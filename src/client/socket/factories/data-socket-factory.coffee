@@ -14,88 +14,75 @@ angular
                     roomPlayerLeave: 'data_socket.events.rooms.player_leave'
                     roomDisplayConnect: 'data_socket.events.rooms.display_connect'
                     roomDisplayDisconnect: 'data_socket.events.rooms.display_disconnect'
-                    playerDataReceive: 'data_socket.events.player_data_receive'
                     socketConnect: 'data_socket.events.socket_connect'
                     socketDisconnect: 'data_socket.events.socket_disconnect'
                     statusUpdateReceive: 'data_socket.events.status_update'
 
-            DataSocketBase.sendPlayerInput = (type, parameters = []) ->
-                Streamy
-                    .emit 'playerInput',
-                        type: type
-                        parameters: parameters
+            DataSocketBase.sendClientInput = (type, parameters = []) ->
+                clientInput =
+                    type: type
+                    parameters: parameters
 
-            DataSocketBase.sendPlayerInfo = (playerName = null, clientType = 'controller') ->
-                playerData =
-                    name: playerName
+                $log.debug 'DataSocket: Sending client input to server', clientInput
+                Streamy
+                    .emit 'clientInput', clientInput
+
+            DataSocketBase.sendClientInfo = (name = null, clientType = 'player') ->
+                clientData =
+                    name: name
                     type: clientType
 
-                $log.debug 'DataSocket: Sending player data to server', playerData
+                $log.debug 'DataSocket: Sending client data to server', clientData
                 Streamy
-                    .emit 'playerData', playerData
+                    .emit 'clientData', clientData
 
-            DataSocketBase.joinRoom = (roomName, playerName = null, clientType = 'controller') ->
-                $timeout () =>
-                    @sendPlayerInfo playerName, clientType
-
-                    $log.debug "DataSocket: Joining room '#{roomName}'"
-                    Streamy
-                        .join roomName
-                , 2000
-
-                # Handler for player updates
+            DataSocketBase.joinRoom = (roomName) ->
+                $log.debug "DataSocket: Joining room '#{roomName}'"
                 Streamy
-                    .on 'statusUpdate', (data, socket) =>
-                        $log.debug "DataSocket: Received 'statusUpdate' data", data
-                        event = @options.events.statusUpdateReceive
+                    .join roomName
 
-                        $log.debug "DataSocket: Triggering event '#{event}'"
-                        $rootScope.$emit event,
-                            data
-                            socket
+            # Handler for status updates
+            Streamy
+                .on 'statusUpdate', (data, socket) ->
+                    $log.debug "DataSocket: Received 'statusUpdate' data", data
+                    event = DataSocketBase.options.events.statusUpdateReceive
 
-                # Handler for player data
-                Streamy
-                    .on 'playerData', (data, socket) =>
-                        $log.debug "DataSocket: Received 'playerData' data", data
-                        event = @options.events.playerDataReceive
+                    $log.debug "DataSocket: Triggering event '#{event}'"
+                    $rootScope.$emit event,
+                        data
+                        socket
 
-                        $log.debug "DataSocket: Triggering event '#{event}'"
-                        $rootScope.$emit event,
-                            data
-                            socket
+            # Handler for joins
+            Streamy
+                .on '__join__', (data, socket) ->
+                    $log.debug "DataSocket: Received '__join__' data", data
+                    event = null
 
-                # Handler for joins
-                Streamy
-                    .on '__join__', (data, socket) =>
-                        $log.debug "DataSocket: Received '__join__' data", data
-                        event = null
+                    if data.client.type == 'player'
+                        event = DataSocketBase.options.events.roomPlayerJoin
+                    else
+                        event = DataSocketBase.options.events.roomDisplayConnect
 
-                        if data.player.type == 'controller'
-                            event = @options.events.roomPlayerJoin
-                        else
-                            event = @options.events.roomDisplayConnect
+                    $log.debug "DataSocket: Triggering event '#{event}'"
+                    $rootScope.$emit event,
+                        data
+                        socket
 
-                        $log.debug "DataSocket: Triggering event '#{event}'"
-                        $rootScope.$emit event,
-                            data
-                            socket
+            # Handler for leaves
+            Streamy
+                .on '__leave__', (data, socket) ->
+                    $log.debug "DataSocket: Received '__leave__' data", data
+                    event = null
 
-                # Handler for leaves
-                Streamy
-                    .on '__leave__', (data, socket) =>
-                        $log.debug "DataSocket: Received '__leave__' data", data
-                        event = null
+                    if data.client.type == 'player'
+                        event = DataSocketBase.options.events.roomPlayerLeave
+                    else
+                        event = DataSocketBase.options.events.roomDisplayDisconnect
 
-                        if data.player.type == 'controller'
-                            event = @options.events.roomPlayerLeave
-                        else
-                            event = @options.events.roomDisplayDisconnect
-
-                        $log.debug "DataSocket: Triggering event '#{event}'"
-                        $rootScope.$emit event,
-                            data
-                            socket
+                    $log.debug "DataSocket: Triggering event '#{event}'"
+                    $rootScope.$emit event,
+                        data
+                        socket
 
             DataSocketBase
     ]

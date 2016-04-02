@@ -25,12 +25,14 @@ Streamy
         # # Call original callback
         # originalStreamyOnJoin room, socket
 
+        socket._clientData.room = room
+
         Streamy
             .rooms room
             .emit '__join__',
                 sid: Streamy.id socket
                 room: room
-                player: socket._playerData
+                client: socket._clientData
 
         # If joining a new room, leave all other rooms
         for otherRoom in Streamy.Rooms.allForSession(Streamy.id(socket)).fetch()
@@ -38,7 +40,7 @@ Streamy
                 Streamy.leave otherRoom.name, socket
 
         # Game join handler
-        Game.onPlayerRoomJoin socket._playerData, room
+        Game.onRoomJoin socket._clientData, room
 
 originalStreamyOnLeave = Streamy.Rooms.onLeave
 Streamy
@@ -54,21 +56,28 @@ Streamy
             .emit '__leave__',
                 sid: Streamy.id socket
                 room: room
-                player: socket._playerData
+                client: socket._clientData
 
         # Game leave handler
-        Game.onPlayerRoomLeave socket._playerData, room
+        Game.onRoomLeave socket._clientData, room
 
 Streamy
-    .on 'playerData', (data, socket) ->
-        console.log "Player: Client '#{Streamy.id(socket)}' identified as player '#{data.name}' of type '#{data.type}'"
-        socket._playerData = data
-        socket._playerData.id = Streamy.id socket
+    .on 'clientData', (data, socket) ->
+        console.log "Client: Client '#{Streamy.id(socket)}' identified as client '#{data.name}' of type '#{data.type}'"
+        socket._clientData = data
+        socket._clientData.id = Streamy.id socket
 
-        # Notify all rooms this player is in about the updated player data
+        # Notify all rooms this client is in about the updated client data
         for room in Streamy.Rooms.allForSession(Streamy.id(socket)).fetch()
             Streamy
                 .rooms room
-                .emit 'playerData',
+                .emit 'clientData',
                     sid: Streamy.id socket
-                    player: socket._playerData
+                    client: socket._clientData
+
+Streamy
+    .on 'clientInput', (data, socket) ->
+        console.log "Client: Client '#{Streamy.id(socket)}' sent input of type '#{data.type}'"
+
+        # Game input handler
+        Game.onRoomInput socket._clientData, socket._clientData.room, data.type, data.parameters

@@ -4,23 +4,24 @@ angular
         '$scope'
         '$stateParams'
         '$log'
+        '$timeout'
         'DataSocket'
-        ($scope, $stateParams, $log, DataSocket) ->
+        ($scope, $stateParams, $log, $timeout, DataSocket) ->
             roomId = $stateParams.id
-            clientType = 'controller'
+            clientType = 'player'
             $scope.playerName = 'Nameless One'
 
-            $scope.sendPlayerInfo = () =>
+            $scope.initController = () =>
                 DataSocket
-                    .sendPlayerInfo $scope.playerName, clientType = clientType
+                    .sendClientInfo $scope.playerName, clientType = clientType
 
-            $scope.joinRoom = () ->
                 DataSocket
-                    .joinRoom roomId, $scope.playerName, clientType = clientType
+                    .joinRoom roomId
 
-            $scope.setPlayerVector = (vector) ->
+            $scope.setPlayerDirection = (direction) ->
                 DataSocket
-                    .emit 'setPlayerVector', vector
+                    .sendClientInput 'setDirection',
+                        direction: direction
 
-            $scope.joinRoom()
+            $timeout $scope.initController, 250
     ]
