@@ -18,6 +18,14 @@ not to exist.
 Game.rooms = {}
 
 
+###
+Game constants.
+###
+Game.constants =
+    ticksPerSecond: 20
+    loopIterationDelayMs: 2
+
+
 class Game.State
 
     ###
@@ -126,25 +134,24 @@ class Game.StartStoppable extends Game.Loggable
         @state = Game.State.STOPPED
 
 
-class Game.Level
+class Game.Level extends Game.Loggable
 
     ###
     Level. A level has a difficulty, a size.
     ###
 
     ###
-    Width
+    Size. An array containing width, length and height.
 
-    @type integer
+    @type array<integer, integer, integer>
     ###
-    width: null
+    size: [0, 0, 0]
 
     ###
-    Height
-
-    @type integer
+    {@inheritDoc}
     ###
-    height: null
+    constructor: (@size) ->
+        super
 
 
 class Game.Room extends Game.Loggable
@@ -199,6 +206,8 @@ class Game.Room extends Game.Loggable
         @log "Creating room '#{@name}' with ID '#{@id}'"
         Game.rooms[@id] = @
 
+        @level = new Game.Level [32, 32, 16]
+
     ###
     Set the primary difficulty.
 
@@ -234,6 +243,7 @@ class Game.Room extends Game.Loggable
         @log "Looking up player '#{playerId}'"
         @players[playerId]
 
+
     ###
     Remove a player.
     ###
@@ -264,18 +274,24 @@ class Game.Entity extends Game.Loggable
 
     ###
     Positional coordinates.
+
+    @type array<integer, integer, integer>
     ###
-    position: [0, 0]
+    position: [0, 0, 0]
 
     ###
     Positional history.
+
+    @type array<array<integer, integer, integer>>
     ###
-    position_history: []
+    positionHistory: []
 
     ###
     Directional vector.
+
+    @type array<integer, integer, integer>
     ###
-    direction: [0, 0]
+    direction: [0, 0, 0]
 
 
 class Game.Player extends Game.Entity
@@ -321,21 +337,12 @@ class Game.EventManager extends Game.StartStoppable
     handlers: {}
 
     ###
-    Delay inbetween loops triggered by
-    `loop_forever`, in ms.
-
-    @type integer
-    @see `loop_forever`
-    ###
-    loop_delay: 2
-
-    ###
     {@inheritDoc}
     ###
     start: () ->
         super
 
-        @loop_forever()
+        @loopForever()
 
     ###
     Perform a single iteration of the event loop,
@@ -352,13 +359,13 @@ class Game.EventManager extends Game.StartStoppable
     @see `stop`
     @see `loop`
     ###
-    loop_forever: () ->
+    loopForever: () ->
         @loop()
 
         if @state == Game.State.ACTIVE
             setTimeout () =>
-                @loop_forever()
-            , @loop_delay
+                @loopForever()
+            , Game.constants.loopIterationDelayMs
 
     ###
     Handle a single event.
@@ -380,7 +387,7 @@ class Game.EventManager extends Game.StartStoppable
     ###
     Register an event handler.
     ###
-    add_handler: (event, handler) ->
+    addHandler: (event, handler) ->
         if not @handlers[event.type]
             @handlers[event.type] = []
 
@@ -397,12 +404,41 @@ class Game.PhysicsEngine extends Game.StartStoppable
     ###
     Handle a tick event.
     ###
-    on_tick: (event) =>
+    onTick: (event) =>
         # For each room, increment the current server tick counter
         # Once we reach the required amount of server ticks for a room
         # tick, we reset the counter.
         for id, room of Game.rooms
-            continue
+            room.tickCounter ?= 0
+            room.tickCounter += 1
+
+            if room.tickCounter >= (Game.constants.ticksPerSecond / room.difficulty)
+                room.tickCounter = 0
+                @onRoomTick event, room
+
+    ###
+    Handle a room tick.
+    ###
+    onRoomTick: (event, room) ->
+        for id, player of room.players
+            oldPosition = player.position[..]
+            position = player.position
+            direction = player.direction
+
+            # Increment x, y and z positioning by direction
+            # vector value
+            for i in [0 .. 2]
+                position[i] += direction[i]
+
+                # Reset axis position when exceeding level
+                # axis size
+                if position[i] < 0
+                    position[i] = room.level.size[i]
+                else if position[i] > room.level.size[i]
+                    position[i] = 0
+
+            player.positionHistory.pop()
+            player.positionHistory.unshift oldPosition
 
 
 ###
@@ -464,7 +500,7 @@ Game.events = new Game.EventManager
 Game.events.start()
 
 Game.physics = new Game.PhysicsEngine
-Game.events.add_handler Game.TickEvent, Game.physics.on_tick
+Game.events.addHandler Game.TickEvent, Game.physics.onTick
 Game.physics.start()
 
 
@@ -473,4 +509,4 @@ Trigger a 'tick' periodically.
 ###
 setInterval () ->
     Game.events.dispatch new Game.TickEvent
-, 200
+, 1000 / Game.constants.ticksPerSecond
