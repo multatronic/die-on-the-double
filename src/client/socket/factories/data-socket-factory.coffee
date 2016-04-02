@@ -17,6 +17,13 @@ angular
                     playerDataReceive: 'data_socket.events.player_data_receive'
                     socketConnect: 'data_socket.events.socket_connect'
                     socketDisconnect: 'data_socket.events.socket_disconnect'
+                    statusUpdateReceive: 'data_socket.events.status_update'
+
+            DataSocketBase.sendPlayerInput = (type, parameters = []) ->
+                Streamy
+                    .emit 'playerInput',
+                        type: type
+                        parameters: parameters
 
             DataSocketBase.sendPlayerInfo = (playerName = null, clientType = 'controller') ->
                 playerData =
@@ -35,6 +42,17 @@ angular
                     Streamy
                         .join roomName
                 , 2000
+
+                # Handler for player updates
+                Streamy
+                    .on 'statusUpdate', (data, socket) =>
+                        $log.debug "DataSocket: Received 'statusUpdate' data", data
+                        event = @options.events.statusUpdateReceive
+
+                        $log.debug "DataSocket: Triggering event '#{event}'"
+                        $rootScope.$emit event,
+                            data
+                            socket
 
                 # Handler for player data
                 Streamy

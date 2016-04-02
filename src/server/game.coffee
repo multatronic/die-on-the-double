@@ -30,6 +30,94 @@ class Game.State
     @ACTIVE = 2
 
 
+class Game.Identifiable
+
+    ###
+    Base class for objects which should contain
+    instance-specific identifiers.
+    ###
+
+    ###
+    "Unique" ID of this object.
+    ###
+    _id: null
+
+    ###
+    Constructor.
+    ###
+    constructor: () ->
+        @_id = md5 uuid.v1()
+
+
+class Game.Loggable extends Game.Identifiable
+
+    ###
+    Base class for objects which should be able to produce
+    instance-specific logs.
+    ###
+
+    log: (args...) ->
+        args[0] = "[#{@constructor.name}:#{@_id.substr(0, 8)}] " + args[0]
+        console.log.apply console.log, args
+
+    ###
+    Constructor.
+    ###
+    constructor: () ->
+        super
+
+        @log "Instantiating"
+
+
+class Game.StartStoppable extends Game.Loggable
+
+    ###
+    Base class for things which can be started or stopped.
+    ###
+
+    ###
+    Current state.
+
+    Only modify with `setState` to avoid breakage.
+    ###
+    state: Game.State.STOPPED
+
+    ###
+    Start the instance.
+    ###
+    start: () ->
+        @log "Starting"
+        @state = Game.State.ACTIVE
+
+    ###
+    Stop the instance.
+    ###
+    stop: () ->
+        @log "Stopping"
+        @state = Game.State.STOPPED
+
+
+class Game.Level
+
+    ###
+    Level. A level has a difficulty, a size.
+    ###
+
+    ###
+    Width
+
+    @type integer
+    ###
+    width: null
+
+    ###
+    Height
+
+    @type integer
+    ###
+    height: null
+
+
 class Game.Room
 
     ###
@@ -62,6 +150,11 @@ class Game.Room
     players: {}
 
     ###
+    The current room level.
+    ###
+    level: null
+
+    ###
     The primary difficulty setting.
 
     Only modify with `setDifficulty` to avoid breakage.
@@ -89,6 +182,12 @@ class Game.Room
     ###
     setState: (state) ->
         @state = state
+
+    ###
+    Set the level.
+    ###
+    setLevel: (level) ->
+        @level = level
 
     ###
     Add a player.
@@ -126,7 +225,29 @@ class Game.Room
         delete Game.rooms[room.name]
 
 
-class Game.Player
+class Game.Entity extends Game.Loggable
+
+    ###
+    Game entity. Can be rendered on the map.
+    ###
+
+    ###
+    Positional coordinates.
+    ###
+    position: [0, 0]
+
+    ###
+    Positional history.
+    ###
+    position_history: []
+
+    ###
+    Directional vector.
+    ###
+    direction: [0, 0]
+
+
+class Game.Player extends Game.Entity
 
     ###
     Game player. Has an ID, a name, a score and a color.
@@ -149,73 +270,6 @@ class Game.Player
         console.log "Creating player '#{@name}' with ID '#{@id}'"
 
 
-class Game.Identifiable
-
-    ###
-    Base class for objects which should contain
-    instance-specific identifiers.
-    ###
-
-    ###
-    "Unique" ID of this object.
-    ###
-    _id: null
-
-    ###
-    Constructor.
-    ###
-    constructor: () ->
-        @_id = md5 uuid.v1()
-
-
-class Game.Loggable extends Game.Identifiable
-
-    ###
-    Base class for objects which should be able to produce
-    instance-specific logs.
-    ###
-
-    log: (args...) ->
-        args[0] = "[#{@constructor.name}:#{@_id.substr(0, 8)}] " + args[0]
-        console.log.apply console.log, args
-
-
-class Game.StartStoppable extends Game.Loggable
-
-    ###
-    Base class for things which can be started or stopped.
-    ###
-
-    ###
-    Current state.
-
-    Only modify with `setState` to avoid breakage.
-    ###
-    state: Game.State.STOPPED
-
-    ###
-    Constructor.
-    ###
-    constructor: () ->
-        super
-
-        @log "Instantiating"
-
-    ###
-    Start the instance.
-    ###
-    start: () ->
-        @log "Starting"
-        @state = Game.State.ACTIVE
-
-    ###
-    Stop the instance.
-    ###
-    stop: () ->
-        @log "Stopping"
-        @state = Game.State.STOPPED
-
-
 class Game.EventManager extends Game.StartStoppable
 
     ###
@@ -227,6 +281,11 @@ class Game.EventManager extends Game.StartStoppable
     Event queue.
     ###
     events: []
+
+    ###
+    Event handlers.
+    ###
+    handlers: {}
 
     ###
     Delay inbetween loops triggered by
@@ -272,13 +331,27 @@ class Game.EventManager extends Game.StartStoppable
     Handle a single event.
     ###
     handle: (event) ->
-        # @TODO Implement further
+        if @handlers[event.type]
+            for handler in @handlers[event.type]
+                result = handler event
+
+                if result == false
+                    break
 
     ###
     Dispatch a single event, placing it at the end of the event queue.
     ###
     dispatch: (event) ->
         @events.push event
+
+    ###
+    Register an event handler.
+    ###
+    add_handler: (event, handler) ->
+        if not @handlers[event.type]
+            @handlers[event.type]
+
+        @handlers[event.type].push handler
 
 ###
 When a player joins a room,
