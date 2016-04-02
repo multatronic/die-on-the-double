@@ -34,13 +34,8 @@ angular
                 stone: [1,0,1,1]
 
 
-            iso = Crafty.isometric.size 128
-            z = 0
-            for i in [20...0]
-                for y in [0...20]
-                    which = Crafty.math.randomInt 0,10
-                    type = if which > 5 then "grass" else "stone"
-                    tile = Crafty.e "2D, DOM, #{type}, Mouse"
+            placeTile = (i, y, z, type) ->
+                tile = Crafty.e "2D, DOM, #{type}, Mouse"
                             .attr 'z',i+1 * y+1
                             # .areaMap [64,0],[128,32],[128,96],[64,128],[0,96],[0,32]
                             .bind "MouseUp", (e) ->
@@ -64,6 +59,15 @@ angular
                                     return
 
                     iso.place i,y,0,tile
+                    return tile
+
+            iso = Crafty.isometric.size 128
+            z = 0
+            for i in [20...0]
+                for y in [0...20]
+                    which = Crafty.math.randomInt 0,10
+                    type = if which > 5 then "grass" else "stone"
+                    placeTile(i, y, z, type)
 
             # these are dom events (not crafty.js ones) so don't capitalize them
             Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
