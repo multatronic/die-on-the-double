@@ -1,8 +1,21 @@
 .controller-btn {
+    @size: 36px;
+
     &.md-button {
-        margin: 0 50px;
+        margin: 25px 25px;
         height: 100px;
         width: 100px;
         line-height: 100px;
+        font-size: @size;
+
+        md-icon {
+            width: @size;
+            height: @size;
+            font-size: @size;
+        }
+    }
+
+    &.rotate-right {
+        transform: rotate(45deg);
     }
 }
