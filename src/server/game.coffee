@@ -135,12 +135,12 @@ class Game.Player
     ###
     ID.
     ###
-    id: null,
+    id: null
 
     ###
     Name.
     ###
-    name: null,
+    name: null
 
     ###
     Constructor.
