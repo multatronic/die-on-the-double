@@ -69,15 +69,11 @@ angular
             for x in [20...0]
                 for y in [0...20]
                     which = Crafty.math.randomInt 0,10
-                    # type = if which > 5 then "grass" else "stone"
-                    type = 'stone'
+                    type = if which > 5 then "grass" else "stone"
                     tile = placeTile(x, y, z, type)
                     tile.bind "MouseUp", (e) ->
+                        # when a tile is clicked stack a block on top of it
                         if e.mouseButton == Crafty.mouseButtons.LEFT
-                            $log.debug this.gridX
-                            $log.debug this.gridY
-                            $log.debug this.gridZ
-                            $log.debug 'YO'
                             placeTile(this.gridX, this.gridY, this.gridZ + 2, 'grass')
                         return
 
