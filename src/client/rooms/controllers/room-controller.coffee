@@ -36,7 +36,10 @@ angular
 
             placeTile = (i, y, z, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                            .attr 'z',i+1 * y+1
+                            .attr 'gridX', i
+                            .attr 'gridY', y
+                            .attr 'gridZ', z
+                            .attr 'z',i+1 * y+1 # graphical layering ordering
                             .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
                             .bind "MouseUp", (e) ->
                                 # destroy on right click
@@ -58,16 +61,25 @@ angular
                                     this.sprite 1,0,1,1
                                     return
 
-                    iso.place i,y,0,tile
+                    iso.place i,y,z,tile
                     return tile
 
             iso = Crafty.isometric.size 128
-            z = 0
+            z = 0 # z dimension
             for x in [20...0]
                 for y in [0...20]
                     which = Crafty.math.randomInt 0,10
-                    type = if which > 5 then "grass" else "stone"
-                    placeTile(x, y, z, type)
+                    # type = if which > 5 then "grass" else "stone"
+                    type = 'stone'
+                    tile = placeTile(x, y, z, type)
+                    tile.bind "MouseUp", (e) ->
+                        if e.mouseButton == Crafty.mouseButtons.LEFT
+                            $log.debug this.gridX
+                            $log.debug this.gridY
+                            $log.debug this.gridZ
+                            $log.debug 'YO'
+                            placeTile(this.gridX, this.gridY, this.gridZ + 2, 'grass')
+                        return
 
             # these are dom events (not crafty.js ones) so don't capitalize them
             Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
