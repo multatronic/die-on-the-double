@@ -40,7 +40,7 @@ Streamy
                 Streamy.leave otherRoom.name, socket
 
         # Game join handler
-        Game.onRoomJoin socket._clientData, room
+        Game.onRoomJoin socket._clientData, room, socket
 
 originalStreamyOnLeave = Streamy.Rooms.onLeave
 Streamy
@@ -59,7 +59,7 @@ Streamy
                 client: socket._clientData
 
         # Game leave handler
-        Game.onRoomLeave socket._clientData, room
+        Game.onRoomLeave socket._clientData, room, socket
 
 Streamy
     .on 'clientData', (data, socket) ->

@@ -163,6 +163,13 @@ class Game.Level extends Game.Loggable
     constructor: (@size) ->
         super
 
+    ###
+    Get state as a plain object.
+    ###
+    getAsObject: () ->
+            id: @id
+            size: @size
+
 
 class Game.Room extends Game.Loggable
 
@@ -294,12 +301,24 @@ class Game.Room extends Game.Loggable
         @log "Removing room '#{room.name}'"
         delete Game.rooms[room.id]
 
+    ###
+    Get state as a plain object.
+    ###
+    getAsObject: () ->
+            id: @id
+            name: @name
+            difficulty: @difficulty
+            level: @level.getAsObject()
+            entities: (v.getAsObject() for k, v of @entities)
+
 
 class Game.Client extends Game.Loggable
 
     ###
-    Game client. Can optionally be linked to a
-    game entity.
+    Game client. Wrapper around a communication channel
+    such as a socket, but explicitly linked to a specific
+    room. Can optionally be linked to a game entity,
+    signifying a player participating in the game.
     ###
 
     ###
@@ -318,10 +337,23 @@ class Game.Client extends Game.Loggable
     type: null
 
     ###
+    Socket.
+
+    @type mixed
+    ###
+    socket: null
+
+    ###
     {@inheritDoc}
     ###
-    constructor: (@id, @name, @type) ->
+    constructor: (@id, @name, @type, @socket) ->
         super
+
+    ###
+    Have an event handled by this client.
+    ###
+    handle: (event) ->
+        Streamy.emit event.constructor.type, event, @socket
 
 
 class Game.Entity extends Game.Loggable
@@ -350,6 +382,15 @@ class Game.Entity extends Game.Loggable
     @type array<integer, integer, integer>
     ###
     direction: [0, 0, 0]
+
+    ###
+    Get state as a plain object.
+    ###
+    getAsObject: () ->
+            id: @id
+            position: @position
+            positionHistory: @positionHistory
+            direction: @direction
 
 
 class Game.SnakeEntity extends Game.Entity
@@ -461,6 +502,7 @@ class Game.PhysicsEngine extends Game.StartStoppable
     Handle a room tick.
     ###
     onRoomTick: (event, room) ->
+        # Calculate latest positions for all entities
         for id, entity of room.entities
             oldPosition = entity.position[..]
             position = entity.position
@@ -481,6 +523,15 @@ class Game.PhysicsEngine extends Game.StartStoppable
             entity.positionHistory.unshift oldPosition
             entity.positionHistory.pop()
 
+        # Generate status update
+        status = room.getAsObject()
+        status['constructor'].type = 'statusUpdate'
+
+        # Dispatch status update to all attached
+        # attached clients of type 'DISPLAY'
+        for id, client of room.clients when client.type == Game.ClientType.DISPLAY
+            client.handle status
+
 
 ###
 When a client joins a room,
@@ -489,7 +540,7 @@ Create a new client object and add it to the room
 as well. In the case of a player joining,
 create a new entity and link it to the client.
 ###
-Game.onRoomJoin = (clientData, roomName) ->
+Game.onRoomJoin = (clientData, roomName, socket) ->
     room = Game.Room.find roomName
 
     if not room
@@ -499,7 +550,7 @@ Game.onRoomJoin = (clientData, roomName) ->
     client = room.findClient clientData.id
 
     if not client
-        client = new Game.Client clientData.id, clientData.name, clientData.type
+        client = new Game.Client clientData.id, clientData.name, clientData.type, socket
 
         # If this client is a player, create a player entity
         # and link the client and the player entity
@@ -518,7 +569,7 @@ and remove the room entirely if they were the
 last client. If they had a linked entity,
 remove said entity as well.
 ###
-Game.onRoomLeave = (clientData, roomName) ->
+Game.onRoomLeave = (clientData, roomName, socket) ->
     room = Game.Room.find roomName
 
     if room
