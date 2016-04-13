@@ -26,6 +26,17 @@ Game.constants =
     loopIterationDelayMs: 2
 
 
+# ###
+# Game helpers.
+# ###
+Game.helpers =
+    ###
+    Helper function for generating a random integer from a range.
+    ###
+    randomIntBetween: (min, max) ->
+        Math.floor (Math.random() * (max - min + 1) + min)
+
+
 class Game.State
 
     ###
@@ -127,7 +138,15 @@ class Game.StartStoppable extends Game.Loggable
 
     Only modify with `setState` to avoid breakage.
     ###
-    state: Game.State.STOPPED
+    state: null
+
+    ###
+    {@inheritDoc}
+    ###
+    constructor: () ->
+        super
+
+        @state = Game.State.STOPPED
 
     ###
     Start the instance.
@@ -155,13 +174,44 @@ class Game.Level extends Game.Loggable
 
     @type array<integer, integer, integer>
     ###
-    size: [0, 0, 0]
+    size: null
+
+    ###
+    World, or whatever you want to call it. A 3D point container with
+    information regarding which entity occupies what coordinate
+    in 3D space.
+    ###
+    world: null
 
     ###
     {@inheritDoc}
     ###
-    constructor: (@size) ->
+    constructor: (@size = [12, 12, 6]) ->
         super
+
+        @world = {}
+
+        # Initialize world
+        for x in [0 .. (@size[0] - 1)]
+            @world[x] = {}
+
+            for y in [0 .. (@size[1] - 1)]
+                @world[x][y] = {}
+
+                for z in [0 .. (@size[2] - 1)]
+                    @world[x][y][z] = null
+
+    ###
+    Get a random (unoccupied) coordinate in this level.
+    ###
+    getRandomCoordinate: () ->
+        # @TODO Make the random coordinate not so random
+        # and ensure the returned coordinate is not actually being occupied
+            [
+                Game.helpers.randomIntBetween 0, (@size[0] - 1)
+                Game.helpers.randomIntBetween 0, (@size[1] - 1)
+                Game.helpers.randomIntBetween 0, (@size[2] - 1)
+            ]
 
     ###
     Get state as a plain object.
@@ -188,21 +238,21 @@ class Game.Room extends Game.Loggable
 
     Only modify with `setState` to avoid breakage.
     ###
-    state: Game.State.STOPPED
+    state: null
 
     ###
     Current clients.
 
     Only modify with `addClient` and `removeClient` to avoid breakage.
     ###
-    clients: {}
+    clients: null
 
     ###
     Current entities.
 
     Only modify with `addEntity` and `removeEntity` to avoid breakage.
     ###
-    entities: {}
+    entities: null
 
     ###
     The current room level.
@@ -214,7 +264,7 @@ class Game.Room extends Game.Loggable
 
     Only modify with `setDifficulty` to avoid breakage.
     ###
-    difficulty: 1
+    difficulty: null
 
     ###
     Constructor.
@@ -222,7 +272,21 @@ class Game.Room extends Game.Loggable
     constructor: (@id, @name) ->
         super
 
-        @level = new Game.Level [32, 32, 16]
+        @level = new Game.Level [12, 12, 6]
+        @entities = {}
+        @clients = {}
+        @difficulty = 1
+        @state = Game.State.ACTIVE
+        @spawnApple()
+
+    ###
+    Spawn an apply in the level attached to this room.
+    ###
+    spawnApple: () ->
+        entity = new Game.AppleEntity
+        entity.position = @level.getRandomCoordinate()
+        @level.world[entity.position[0]][entity.position[1]][entity.position[2]] = entity
+        @addEntity entity
 
     ###
     Set the primary difficulty.
@@ -310,6 +374,7 @@ class Game.Room extends Game.Loggable
             difficulty: @difficulty
             level: @level.getAsObject()
             entities: (v.getAsObject() for k, v of @entities)
+            state: @state
 
 
 class Game.Client extends Game.Loggable
@@ -367,21 +432,31 @@ class Game.Entity extends Game.Loggable
 
     @type array<integer, integer, integer>
     ###
-    position: [0, 0, 0]
+    position: null
 
     ###
     Positional history.
 
     @type array<array<integer, integer, integer>>
     ###
-    positionHistory: []
+    positionHistory: null
 
     ###
     Directional vector.
 
     @type array<integer, integer, integer>
     ###
-    direction: [0, 0, 0]
+    direction: null
+
+    ###
+    {@inheritDoc}
+    ###
+    constructor: () ->
+        super
+
+        @position = [0, 0, 0]
+        @positionHistory = []
+        @direction = [0, 0, 0]
 
     ###
     Get state as a plain object.
@@ -401,6 +476,13 @@ class Game.SnakeEntity extends Game.Entity
     ###
 
 
+class Game.AppleEntity extends Game.Entity
+
+    ###
+    Apple entity.
+    ###
+
+
 class Game.EventManager extends Game.StartStoppable
 
     ###
@@ -411,12 +493,21 @@ class Game.EventManager extends Game.StartStoppable
     ###
     Event queue.
     ###
-    events: []
+    events: null
 
     ###
     Event handlers.
     ###
-    handlers: {}
+    handlers: null
+
+    ###
+    {@inheritDoc}
+    ###
+    constructor: () ->
+        super
+
+        @events = []
+        @handlers = {}
 
     ###
     {@inheritDoc}
@@ -490,7 +581,7 @@ class Game.PhysicsEngine extends Game.StartStoppable
         # For each room, increment the current server tick counter
         # Once we reach the required amount of server ticks for a room
         # tick, we reset the counter.
-        for id, room of Game.rooms
+        for id, room of Game.rooms when room.state == Game.State.ACTIVE
             room.tickCounter ?= 0
             room.tickCounter += 1
 
@@ -504,9 +595,15 @@ class Game.PhysicsEngine extends Game.StartStoppable
     onRoomTick: (event, room) ->
         # Calculate latest positions for all entities
         for id, entity of room.entities
+            # No need to perform calculations for stuff which isn't moving
+            # @TODO Determine whether performance would be increased if we use array sum != 0 instead
+            if (entity.direction.indexOf 1) == -1 && (entity.direction.indexOf -1) == -1
+                continue
+
             oldPosition = entity.position[..]
             position = entity.position
             direction = entity.direction
+            moveOk = true
 
             # Increment x, y and z positioning by direction
             # vector value
@@ -521,7 +618,34 @@ class Game.PhysicsEngine extends Game.StartStoppable
                     position[i] = 0
 
             entity.positionHistory.unshift oldPosition
-            entity.positionHistory.pop()
+            oldestPosition = entity.positionHistory.pop()
+
+            # If there is already an entity at the entity's latest position,
+            # we have a collision on our hands
+            target = room.level.world[position[0]][position[1]][position[2]]
+            if target
+                # A collision with an apple entity means we gain a "point",
+                # whereas anything else means we've lost
+                if target.constructor.name == Game.AppleEntity.name
+                    # Replace apple
+                    room.removeEntity target
+                    room.spawnApple()
+
+                    # Increase the size of our player
+                    entity.positionHistory.push oldestPosition
+                    oldestPosition = null
+                else
+                    # @TODO Lose a life here, or lose the game
+                    # Fail movement
+                    moveOk = false
+
+            if moveOk
+                # Place the entity at its newest position
+                room.level.world[position[0]][position[1]][position[2]] = entity
+
+                # Remove the entity from its oldest position if required
+                if oldestPosition
+                    room.level.world[oldestPosition[0]][oldestPosition[1]][oldestPosition[2]] = null
 
         # Generate status update
         status = room.getAsObject()
@@ -601,6 +725,8 @@ Game.onRoomInput = (clientData, roomName, type, parameters) ->
         if client
             if type == 'setDirection'
                 client.entity.direction = parameters.direction
+            else if type == 'setState'
+                room.setState Game.State[parameters.state]
 
 
 ###
