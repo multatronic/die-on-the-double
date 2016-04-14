@@ -11,6 +11,7 @@ angular
         ($scope, $stateParams, $log, $rootScope, $timeout, $mdToast, DataSocket) ->
             roomId = $stateParams.id
             clientType = 'display'
+            level = null
 
             $timeout () ->
                 DataSocket.sendClientInfo 'DISPLAY', clientType = clientType
@@ -29,6 +30,10 @@ angular
             $rootScope.$on DataSocket.options.events.roomDisplayDisconnect, (event, data) ->
                 $mdToast.showSimple "A display was disconnected."
 
+            $rootScope.$on 'data_socket.events.status_update', (event, data) ->
+                if level == null
+                    initLevel data.level.size
+
             # init crafty canvas
             Crafty.init 1800, 800, document.getElementById('crafty-canvas')
 
@@ -36,6 +41,23 @@ angular
                 grass: [0,0,1,1],
                 stone: [1,0,1,1]
 
+
+            initLevel = (levelDimensions) ->
+                $log.debug 'Initializing level with dimensions', levelDimensions
+                level = Crafty.isometric.size 128
+                xSize = levelDimensions[0]
+                ySize = levelDimensions[1]
+                z = 0 # z dimension
+                for x in [xSize...0]
+                    for y in [0...ySize]
+                        which = Crafty.math.randomInt 0,10
+                        type = if which > 5 then "grass" else "stone"
+                        tile = placeTile(x, y, z, type)
+                        tile.bind "MouseUp", (e) ->
+                            # when a tile is clicked stack a block on top of it
+                            if e.mouseButton == Crafty.mouseButtons.LEFT
+                                placeTile(this.gridX, this.gridY, this.gridZ + 2, 'grass')
+                            return
 
             placeTile = (i, y, z, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
@@ -64,21 +86,8 @@ angular
                                     this.sprite 1,0,1,1
                                     return
 
-                    iso.place i,y,z,tile
+                    level.place i,y,z,tile
                     return tile
-
-            iso = Crafty.isometric.size 128
-            z = 0 # z dimension
-            for x in [20...0]
-                for y in [0...20]
-                    which = Crafty.math.randomInt 0,10
-                    type = if which > 5 then "grass" else "stone"
-                    tile = placeTile(x, y, z, type)
-                    tile.bind "MouseUp", (e) ->
-                        # when a tile is clicked stack a block on top of it
-                        if e.mouseButton == Crafty.mouseButtons.LEFT
-                            placeTile(this.gridX, this.gridY, this.gridZ + 2, 'grass')
-                        return
 
             # these are dom events (not crafty.js ones) so don't capitalize them
             Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
