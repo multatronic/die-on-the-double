@@ -466,6 +466,7 @@ class Game.Entity extends Game.Loggable
             position: @position
             positionHistory: @positionHistory
             direction: @direction
+            type: @constructor.name
 
 
 class Game.SnakeEntity extends Game.Entity

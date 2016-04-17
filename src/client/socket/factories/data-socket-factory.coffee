@@ -44,10 +44,10 @@ angular
             # Handler for status updates
             Streamy
                 .on 'statusUpdate', (data, socket) ->
-                    $log.debug "DataSocket: Received 'statusUpdate' data", data
+                    # $log.debug "DataSocket: Received 'statusUpdate' data", data
                     event = DataSocketBase.options.events.statusUpdateReceive
 
-                    $log.debug "DataSocket: Triggering event '#{event}'"
+                    # $log.debug "DataSocket: Triggering event '#{event}'"
                     $rootScope.$emit event,
                         data
                         socket
