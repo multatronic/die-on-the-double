@@ -46,9 +46,12 @@ angular
             # init crafty canvas
             Crafty.init 1800, 800, document.getElementById('crafty-canvas')
 
-            Crafty.sprite 128, "sprite.png",
-                grass: [0,0,1,1],
-                stone: [1,0,1,1]
+            # Crafty.sprite 128, "sprite.png",
+            #     grass: [0,0,1,1],
+            #     stone: [1,0,1,1]
+            Crafty.sprite "test_diamond.png",
+                cube: [0,0,136, 207]
+
 
             diffObjectKeys = (a, b) ->
                 keysA = Object.keys(a)
@@ -87,7 +90,6 @@ angular
 
             initLevel = (levelDimensions) ->
                 $log.debug 'Initializing level with dimensions', levelDimensions
-                # level = Crafty.isometric.size 128
                 xSize = levelDimensions[0]
                 ySize = levelDimensions[1]
                 zSize = levelDimensions[2]
@@ -118,34 +120,46 @@ angular
                 x = position[0]
                 y = position[1]
                 z = position[2]
-                tile = Crafty.e "2D, DOM, #{type}, Mouse"
+                tile = Crafty.e "2D, DOM, cube, Mouse"
                             .attr 'gridX', x
                             .attr 'gridY', y
                             .attr 'gridZ', z
                             .attr 'z',x+1 * y+1 # graphical layering ordering
-                            .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
-                            .bind "MouseUp", (e) ->
-                                # destroy on right click
-                                if e.mouseButton == Crafty.mouseButtons.RIGHT
-                                    this.destroy()
-                                return
-                            .bind "MouseOver", () ->
-                                if this.has "grass"
-                                    this.sprite 0,1,1,1
-                                    return
-                                else
-                                    this.sprite 1,1,1,1
-                                    return
-                            .bind "MouseOut", () ->
-                                if this.has "grass"
-                                    this.sprite 0,0,1,1
-                                    return
-                                else
-                                    this.sprite 1,0,1,1
-                                    return
+                            # .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
+                            # .bind "MouseUp", (e) ->
+                            #     # destroy on right click
+                            #     if e.mouseButton == Crafty.mouseButtons.RIGHT
+                            #         this.destroy()
+                            #     return
+                # x = position[0]
+                # y = position[1]
+                # z = position[2]
+                # tile = Crafty.e "2D, DOM, #{type}, Mouse"
+                #             .attr 'gridX', x
+                #             .attr 'gridY', y
+                #             .attr 'gridZ', z
+                #             .attr 'z',x+1 * y+1 # graphical layering ordering
+                #             .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
+                #             .bind "MouseUp", (e) ->
+                #                 # destroy on right click
+                #                 if e.mouseButton == Crafty.mouseButtons.RIGHT
+                #                     this.destroy()
+                #                 return
+                            # .bind "MouseOver", () ->
+                            #     if this.has "grass"
+                            #         this.sprite 0,1,1,1
+                            #         return
+                            #     else
+                            #         this.sprite 1,1,1,1
+                            #         return
+                            # .bind "MouseOut", () ->
+                            #     if this.has "grass"
+                            #         this.sprite 0,0,1,1
+                            #         return
+                            #     else
+                            #         this.sprite 1,0,1,1
+                            #         return
 
-                # level.place tile,x,y,z
-                # tile = Crafty.e('2D, DOM, Color').color('red').attr({w:128, h:128})
                 level.place tile, x, y, z
                 return tile
 
