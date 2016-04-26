@@ -49,9 +49,14 @@ angular
             # Crafty.sprite 128, "sprite.png",
             #     grass: [0,0,1,1],
             #     stone: [1,0,1,1]
-            Crafty.sprite "test_diamond.png",
-                cube: [0,0,136, 207]
+            Crafty.sprite "test_sprites.png",
+                blank: [0, 0, 130, 198]
+                player: [131, 0, 130, 198]
+                trophy: [261, 0, 130, 198]
 
+            entitySpriteMap =
+                AppleEntity: 'trophy'
+                SnakeEntity: 'player'
 
             diffObjectKeys = (a, b) ->
                 keysA = Object.keys(a)
@@ -74,10 +79,10 @@ angular
 
                 # spawn new entities
                 for id in newEntityIds
-                    $log.debug 'spawning entity with id', id
+                    # $log.debug 'spawning entity with id', id
                     remoteEntity = @remoteEntities[id]
                     @localEntities[id] = remoteEntity
-                    @localEntities[id].craftyEntity = placeTile remoteEntity.position, 'grass'
+                    @localEntities[id].craftyEntity = placeTile remoteEntity.position, entitySpriteMap[remoteEntity.type]
 
             updateEntityPositions = () =>
                 for id, entity of @localEntities
@@ -85,23 +90,22 @@ angular
                     remote = @remoteEntities[id]
                     entity.position = remote.position
                     entity.positionHistory = remote.positionHistory
-                    $log.debug 'here:', entity.craftyEntity
-                    level.place entity.craftyEntity, entity.position[0], entity.position[1], entity.position[2]
+                    # $log.debug 'here:', entity.craftyEntity
+                    placeEntity entity.craftyEntity, entity.position
 
             initLevel = (levelDimensions) ->
                 $log.debug 'Initializing level with dimensions', levelDimensions
                 xSize = levelDimensions[0]
                 ySize = levelDimensions[1]
                 zSize = levelDimensions[2]
-                level = Crafty.diamondIso.init 128, 128, xSize, ySize
+                level = Crafty.diamondIso.init 130, 130, xSize, ySize
 
-                z = 0 # z dimension
                 for x in [xSize...0] # back to front to prevent overlap
-                    for y in [0...ySize]
-                        # which = Crafty.math.randomInt 0,10
-                        # type = if which > 5 then "grass" else "stone"
-                        tile = placeTile [x, y, z], 'stone'
-
+                    for y in [1...ySize + 1]
+                        for z in [2...zSize + 2]
+                            # which = Crafty.math.randomInt 0,10
+                            # type = if which > 5 then "grass" else "stone"
+                            tile = placeTile [x, y, z], 'blank'
 
                         # tile.bind "MouseUp", (e) ->
                         #     # when a tile is clicked stack a block on top of it
@@ -116,15 +120,15 @@ angular
                         #         tile = placeTile(x, y, zs, 'stone')
                         #         tile.attr 'z', x+1  * y+1 + 10
 
+            placeEntity = (entity, position) ->
+                level.place entity, position[0], position[1], position[2] / 2
+
             placeTile = (position, type) ->
-                x = position[0]
-                y = position[1]
-                z = position[2]
-                tile = Crafty.e "2D, DOM, cube, Mouse"
-                            .attr 'gridX', x
-                            .attr 'gridY', y
-                            .attr 'gridZ', z
-                            .attr 'z',x+1 * y+1 # graphical layering ordering
+                tile = Crafty.e "2D, DOM, #{type}, Mouse"
+                            .attr 'gridX', position[0]
+                            .attr 'gridY', position[1]
+                            .attr 'gridZ', position[2]
+                            .attr 'z',position[0]+1 * position[1]+1 # graphical layering ordering
                             # .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
                             # .bind "MouseUp", (e) ->
                             #     # destroy on right click
@@ -160,7 +164,7 @@ angular
                             #         this.sprite 1,0,1,1
                             #         return
 
-                level.place tile, x, y, z
+                placeEntity tile, position
                 return tile
 
             # these are dom events (not crafty.js ones) so don't capitalize them
