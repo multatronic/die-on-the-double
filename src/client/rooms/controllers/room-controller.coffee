@@ -46,9 +46,6 @@ angular
             # init crafty canvas
             Crafty.init null, null, document.getElementById('crafty-canvas')
 
-            # Crafty.sprite 128, "sprite.png",
-            #     grass: [0,0,1,1],
-            #     stone: [1,0,1,1]
             Crafty.sprite 30, 45, "test_sprites_small.png",
                 blank: [0, 0]
                 player: [1, 0]
@@ -100,13 +97,13 @@ angular
                 zSize = levelDimensions[2]
                 level = Crafty.diamondIso.init 30, 30, xSize, ySize
 
+                # using zSize + 1 here breaks the apple grabbing for some reason?
                 for x in [xSize...0] # back to front to prevent overlap
                     for y in [1...ySize + 1]
-                        for z in [1...zSize + 1]
-                        # for z in [2...zSize + 2]
-                            # which = Crafty.math.randomInt 0,10
-                            # type = if which > 5 then "grass" else "stone"
+                        for z in [2...zSize + 2]
                             tile = placeTile [x, y, z], 'blank'
+
+                # center viewport middle of level
                 centerX = parseInt xSize/2
                 centerY = parseInt ySize/2
                 $log.debug 'centering viewport at', centerX, centerY
@@ -121,21 +118,4 @@ angular
 
                 placeEntity tile, position
                 return tile
-
-            # these are dom events (not crafty.js ones) so don't capitalize them
-            Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
-                return if e.button > 1
-                base = x: e.clientX, y: e.clientY
-
-                scroll = (e) ->
-                    dx = base.x - e.clientX
-                    dy = base.y - e.clientY
-                    base = x: e.clientX, y: e.clientY
-                    Crafty.viewport.x -= dx;
-                    Crafty.viewport.y -= dy;
-
-
-                Crafty.addEvent this, Crafty.stage.elem, "mousemove", scroll;
-                Crafty.addEvent this, Crafty.stage.elem, "mouseup", () ->
-                    Crafty.removeEvent this, Crafty.stage.elem, "mousemove", scroll
     ]
