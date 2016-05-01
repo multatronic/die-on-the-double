@@ -44,7 +44,7 @@ angular
                 updateEntityPositions()
 
             # init crafty canvas
-            Crafty.init 1800, 800, document.getElementById('crafty-canvas')
+            Crafty.init null, null, document.getElementById('crafty-canvas')
 
             # Crafty.sprite 128, "sprite.png",
             #     grass: [0,0,1,1],
@@ -107,6 +107,10 @@ angular
                             # which = Crafty.math.randomInt 0,10
                             # type = if which > 5 then "grass" else "stone"
                             tile = placeTile [x, y, z], 'blank'
+                centerX = parseInt xSize/2
+                centerY = parseInt ySize/2
+                $log.debug 'centering viewport at', centerX, centerY
+                level.centerAt centerX, centerY
 
             placeEntity = (entity, position) ->
                 level.place entity, position[0], position[1], position[2] / 2
