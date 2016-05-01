@@ -49,10 +49,10 @@ angular
             # Crafty.sprite 128, "sprite.png",
             #     grass: [0,0,1,1],
             #     stone: [1,0,1,1]
-            Crafty.sprite "test_sprites.png",
-                blank: [0, 0, 130, 198]
-                player: [131, 0, 130, 198]
-                trophy: [261, 0, 130, 198]
+            Crafty.sprite 30, 45, "test_sprites_small.png",
+                blank: [0, 0]
+                player: [1, 0]
+                trophy: [2, 0]
 
             entitySpriteMap =
                 AppleEntity: 'trophy'
@@ -98,71 +98,22 @@ angular
                 xSize = levelDimensions[0]
                 ySize = levelDimensions[1]
                 zSize = levelDimensions[2]
-                level = Crafty.diamondIso.init 130, 130, xSize, ySize
+                level = Crafty.diamondIso.init 30, 30, xSize, ySize
 
                 for x in [xSize...0] # back to front to prevent overlap
                     for y in [1...ySize + 1]
-                        for z in [2...zSize + 2]
+                        for z in [1...zSize + 1]
+                        # for z in [2...zSize + 2]
                             # which = Crafty.math.randomInt 0,10
                             # type = if which > 5 then "grass" else "stone"
                             tile = placeTile [x, y, z], 'blank'
-
-                        # tile.bind "MouseUp", (e) ->
-                        #     # when a tile is clicked stack a block on top of it
-                        #     if e.mouseButton == Crafty.mouseButtons.LEFT
-                        #         placeTile([this.gridX, this.gridY, this.gridZ + 2], 'stone')
-                        #     return
-
-                        # construct the back wall of the level (temp. disabled)
-                        # if y == 0
-                        #     for zs in [1...zSize]
-                        #         $log.debug 'placing at',x,y,zs
-                        #         tile = placeTile(x, y, zs, 'stone')
-                        #         tile.attr 'z', x+1  * y+1 + 10
 
             placeEntity = (entity, position) ->
                 level.place entity, position[0], position[1], position[2] / 2
 
             placeTile = (position, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                            .attr 'gridX', position[0]
-                            .attr 'gridY', position[1]
-                            .attr 'gridZ', position[2]
-                            .attr 'z',position[0]+1 * position[1]+1 # graphical layering ordering
-                            # .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
-                            # .bind "MouseUp", (e) ->
-                            #     # destroy on right click
-                            #     if e.mouseButton == Crafty.mouseButtons.RIGHT
-                            #         this.destroy()
-                            #     return
-                # x = position[0]
-                # y = position[1]
-                # z = position[2]
-                # tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                #             .attr 'gridX', x
-                #             .attr 'gridY', y
-                #             .attr 'gridZ', z
-                #             .attr 'z',x+1 * y+1 # graphical layering ordering
-                #             .areaMap 74,10,138,42,138,106,74,138,10,106,10,42
-                #             .bind "MouseUp", (e) ->
-                #                 # destroy on right click
-                #                 if e.mouseButton == Crafty.mouseButtons.RIGHT
-                #                     this.destroy()
-                #                 return
-                            # .bind "MouseOver", () ->
-                            #     if this.has "grass"
-                            #         this.sprite 0,1,1,1
-                            #         return
-                            #     else
-                            #         this.sprite 1,1,1,1
-                            #         return
-                            # .bind "MouseOut", () ->
-                            #     if this.has "grass"
-                            #         this.sprite 0,0,1,1
-                            #         return
-                            #     else
-                            #         this.sprite 1,0,1,1
-                            #         return
+                        # .attr 'z',position[0]+1 * position[1]+1 # graphical layering ordering
 
                 placeEntity tile, position
                 return tile
