@@ -8,7 +8,8 @@ angular
         '$timeout'
         '$mdToast'
         'DataSocket'
-        ($scope, $stateParams, $log, $rootScope, $timeout, $mdToast, DataSocket) ->
+        '$window'
+        ($scope, $stateParams, $log, $rootScope, $timeout, $mdToast, DataSocket, $window) ->
             roomId = $stateParams.id
             clientType = 'display'
             level = null
@@ -43,8 +44,12 @@ angular
                 spawnEntities()
                 updateEntityPositions()
 
-            # init crafty canvas
+            # init crafty
             Crafty.init null, null, document.getElementById('crafty-canvas')
+
+            # handle resizing
+            angular.element $window
+                .bind 'resize', -> correctLevelSizing()
 
             # Crafty.sprite 128, "sprite.png",
             #     grass: [0,0,1,1],
@@ -74,24 +79,41 @@ angular
 
                 # cleanup deprecated entities
                 for id in oldEntityIds
-                    @localEntities[id].craftyEntity.destroy()
+                    x.destroy() for x in @localEntities[id].craftyEntities
                     delete @localEntities[id]
 
                 # spawn new entities
                 for id in newEntityIds
                     # $log.debug 'spawning entity with id', id
-                    remoteEntity = @remoteEntities[id]
-                    @localEntities[id] = remoteEntity
-                    @localEntities[id].craftyEntity = placeTile remoteEntity.position, entitySpriteMap[remoteEntity.type]
+                    entity = @remoteEntities[id]
+                    @localEntities[id] = entity
+                    entity.craftyEntities = []
 
             updateEntityPositions = () =>
                 for id, entity of @localEntities
-                    # grab id in remote and update position
                     remote = @remoteEntities[id]
                     entity.position = remote.position
                     entity.positionHistory = remote.positionHistory
-                    # $log.debug 'here:', entity.craftyEntity
-                    placeEntity entity.craftyEntity, entity.position
+
+                    # Iterate over all positions for this entity (positionHistory.length + 1 [primary position])
+                    # Ensure we have a crafty entity for each position we need to take up
+                    # Correct positions of each crafty entity by index
+                    for i in [0 .. entity.positionHistory.length]
+                        # Determine position for this entity
+                        position = switch i
+                            when 0 then entity.position
+                            else entity.positionHistory[i - 1]
+
+                        # Ensure entity exists if it doesn't yet
+                        if entity.craftyEntities.length < (i + 1)
+                            entity.craftyEntities.push (placeTile position, entitySpriteMap[entity.type])
+                        # If the entity exists, correct its positioning
+                        else
+                            placeEntity entity.craftyEntities[i], position
+
+                    # Remove each crafty entity which no is no longer required
+                    removed = entity.craftyEntities.splice (entity.positionHistory.length + 1)
+                    x.destroy() for x in removed
 
             initLevel = (levelDimensions) ->
                 $log.debug 'Initializing level with dimensions', levelDimensions
@@ -107,10 +129,17 @@ angular
                             # which = Crafty.math.randomInt 0,10
                             # type = if which > 5 then "grass" else "stone"
                             tile = placeTile [x, y, z], 'blank'
-                centerX = parseInt xSize/2
-                centerY = parseInt ySize/2
-                $log.debug 'centering viewport at', centerX, centerY
-                level.centerAt centerX, centerY
+
+                correctLevelSizing()
+
+            correctLevelSizing = () ->
+                Crafty.viewport.init $window.innerWidth, $window.innerHeight - 80, document.getElementById('crafty-canvas')
+
+                if level
+                    # @TODO Figure out why we need to do (x / 2) - 2, (y / 2) + 2
+                    # in order to center the level properly
+                    center = [(level._tiles.length / 2) - 2, (level._tiles[0].length / 2) + 2]
+                    level.centerAt center[0], center[1]
 
             placeEntity = (entity, position) ->
                 level.place entity, position[0], position[1], position[2] / 2

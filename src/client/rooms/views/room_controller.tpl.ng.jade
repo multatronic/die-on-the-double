@@ -5,23 +5,24 @@
 
 //-     md-button(type='submit' class='md-raised md-primary' ng-disabled='!controllerForm.$valid') Go!
 
-div(flex layout='row' layout-align='space-around center')
-    div
+div(layout-padding)
+    div(flex layout='row' layout-align='space-around center')
         div
-            md-button(class='md-fab md-hue-2 controller-btn rotate-right' ng-click='setPlayerDirection([-1, 0, 0])')
-                md-icon arrow_back
-            md-button(class='md-fab controller-btn rotate-right' ng-click='setPlayerDirection([0, 1, 0])')
-                md-icon arrow_upward
-        div
-            md-button(class='md-fab controller-btn rotate-right' ng-click='setPlayerDirection([0, -1, 0])')
-                md-icon arrow_downward
-            md-button(class='md-fab md-hue-2 controller-btn rotate-right' ng-click='setPlayerDirection([1, 0, 0])')
-                md-icon arrow_forward
+            div
+                md-button(class='md-fab md-hue-2 controller-btn rotate-right' ng-click='setPlayerDirection([-1, 0, 0])')
+                    md-icon arrow_back
+                md-button(class='md-fab controller-btn rotate-right' ng-click='setPlayerDirection([0, -1, 0])')
+                    md-icon arrow_upward
+            div
+                md-button(class='md-fab controller-btn rotate-right' ng-click='setPlayerDirection([0, 1, 0])')
+                    md-icon arrow_downward
+                md-button(class='md-fab md-hue-2 controller-btn rotate-right' ng-click='setPlayerDirection([1, 0, 0])')
+                    md-icon arrow_forward
 
-    div
         div
-            md-button(class='md-fab md-primary md-hue-2 controller-btn' ng-click='setPlayerDirection([0, 0, 1])')
-                md-icon arrow_upward
-        div
-            md-button(class='md-fab md-primary controller-btn' ng-click='setPlayerDirection([0, 0, -1])')
-                md-icon arrow_downward
+            div
+                md-button(class='md-fab md-primary md-hue-2 controller-btn' ng-click='setPlayerDirection([0, 0, 1])')
+                    md-icon arrow_upward
+            div
+                md-button(class='md-fab md-primary controller-btn' ng-click='setPlayerDirection([0, 0, -1])')
+                    md-icon arrow_downward
