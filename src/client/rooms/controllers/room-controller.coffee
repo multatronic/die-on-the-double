@@ -46,10 +46,16 @@ angular
             # init crafty canvas
             Crafty.init null, null, document.getElementById('crafty-canvas')
 
-            Crafty.sprite 30, 45, "test_sprites_small.png",
-                blank: [0, 0]
-                player: [1, 0]
-                trophy: [2, 0]
+            Crafty.sprite 30, 45, "test_sprites_small_exploded.png",
+                player: [0, 0]
+                trophy: [1, 0],
+                floor: [2, 0],
+                left: [3, 0],
+                right: [4, 0],
+                leftFloor: [5, 0],
+                rightFloor: [6, 0],
+                leftRight: [7, 0],
+                lfr: [8, 0]
 
             entitySpriteMap =
                 AppleEntity: 'trophy'
@@ -101,7 +107,15 @@ angular
                 for x in [xSize...0] # back to front to prevent overlap
                     for y in [1...ySize + 1]
                         for z in [2...zSize + 2]
-                            tile = placeTile [x, y, z], 'blank'
+                            if x == 1
+                                $log.debug 'mark'
+                                placeTile [x, y, z], 'left'
+                            if y == 1
+                                placeTile [x, y, z], 'right'
+                            if z == 2
+                                placeTile [x, y, z], 'floor'
+
+                            # tile = placeTile [x, y, z], 'floor'
 
                 # center viewport middle of level
                 centerX = parseInt xSize/2
