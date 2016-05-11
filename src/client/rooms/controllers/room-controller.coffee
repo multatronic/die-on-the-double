@@ -36,6 +36,8 @@ angular
                 if level == null
                     initLevel data.level.size
 
+                Crafty.trigger 'socket_status_update', data
+
                 @remoteEntities = {}
                 for remoteEntity in data.entities
                     @remoteEntities[remoteEntity.id] = remoteEntity
@@ -52,10 +54,9 @@ angular
                 floor: [2, 0],
                 left: [3, 0],
                 right: [4, 0],
-                leftFloor: [5, 0],
-                rightFloor: [6, 0],
-                leftRight: [7, 0],
-                lfr: [8, 0]
+                floor_alt: [5, 0],
+                left_alt: [6, 0],
+                right_alt: [7, 0]
 
             entitySpriteMap =
                 AppleEntity: 'trophy'
@@ -108,7 +109,6 @@ angular
                     for y in [1...ySize + 1]
                         for z in [2...zSize + 2]
                             if x == 1
-                                $log.debug 'mark'
                                 placeTile [x, y, z], 'left'
                             if y == 1
                                 placeTile [x, y, z], 'right'
@@ -128,7 +128,16 @@ angular
 
             placeTile = (position, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                        # .attr 'z',position[0]+1 * position[1]+1 # graphical layering ordering
+                       .attr 'z', 0
+                       .bind 'socket_status_update', (e) ->
+                          updatePosition = e.entities[0].position
+                          if updatePosition[0] == position[0] and updatePosition[1] == position[1] and this.has 'floor'
+                            this.sprite 5, 0
+                          if updatePosition[1] == position[1] and updatePosition[2] == position[2] and this.has 'left'
+                            $log.debug 'left alt', e.entities[0].position, position
+                            this.sprite 6, 0
+                          if updatePosition[0] == position[0] and updatePosition[2] == position[2] and this.has 'right'
+                            this.sprite 7, 0
 
                 placeEntity tile, position
                 return tile
