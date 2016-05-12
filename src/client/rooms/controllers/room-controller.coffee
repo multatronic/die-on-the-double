@@ -37,6 +37,8 @@ angular
                 if level == null
                     initLevel data.level.size
 
+                Crafty.trigger 'socket_status_update', data
+
                 @remoteEntities = {}
                 for remoteEntity in data.entities
                     @remoteEntities[remoteEntity.id] = remoteEntity
@@ -51,13 +53,15 @@ angular
             angular.element $window
                 .bind 'resize', -> correctLevelSizing()
 
-            # Crafty.sprite 128, "sprite.png",
-            #     grass: [0,0,1,1],
-            #     stone: [1,0,1,1]
-            Crafty.sprite 30, 45, "test_sprites_small.png",
-                blank: [0, 0]
-                player: [1, 0]
-                trophy: [2, 0]
+            Crafty.sprite 30, 45, "test_sprites_small_exploded.png",
+                player: [0, 0]
+                trophy: [1, 0],
+                floor: [2, 0],
+                left: [3, 0],
+                right: [4, 0],
+                floor_alt: [5, 0],
+                left_alt: [6, 0],
+                right_alt: [7, 0]
 
             entitySpriteMap =
                 AppleEntity: 'trophy'
@@ -122,13 +126,16 @@ angular
                 zSize = levelDimensions[2]
                 level = Crafty.diamondIso.init 30, 30, xSize, ySize
 
+                # using zSize + 1 here breaks the apple grabbing for some reason?
                 for x in [xSize...0] # back to front to prevent overlap
                     for y in [1...ySize + 1]
                         for z in [1...zSize + 1]
-                        # for z in [2...zSize + 2]
-                            # which = Crafty.math.randomInt 0,10
-                            # type = if which > 5 then "grass" else "stone"
-                            tile = placeTile [x, y, z], 'blank'
+                            if x == 1
+                                placeTile [x, y, z], 'left'
+                            if y == 1
+                                placeTile [x, y, z], 'right'
+                            if z == 1
+                                placeTile [x, y, z], 'floor'
 
                 correctLevelSizing()
 
@@ -146,25 +153,17 @@ angular
 
             placeTile = (position, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                        # .attr 'z',position[0]+1 * position[1]+1 # graphical layering ordering
+                       .attr 'z', 0
+                       .bind 'socket_status_update', (e) ->
+                          updatePosition = e.entities[0].position
+                          if updatePosition[0] == position[0] and updatePosition[1] == position[1] and this.has 'floor'
+                            this.sprite 5, 0
+                          if updatePosition[1] == position[1] and updatePosition[2] == position[2] and this.has 'left'
+                            $log.debug 'left alt', e.entities[0].position, position
+                            this.sprite 6, 0
+                          if updatePosition[0] == position[0] and updatePosition[2] == position[2] and this.has 'right'
+                            this.sprite 7, 0
 
                 placeEntity tile, position
                 return tile
-
-            # these are dom events (not crafty.js ones) so don't capitalize them
-            Crafty.addEvent this, Crafty.stage.elem, "mousedown", (e) ->
-                return if e.button > 1
-                base = x: e.clientX, y: e.clientY
-
-                scroll = (e) ->
-                    dx = base.x - e.clientX
-                    dy = base.y - e.clientY
-                    base = x: e.clientX, y: e.clientY
-                    Crafty.viewport.x -= dx;
-                    Crafty.viewport.y -= dy;
-
-
-                Crafty.addEvent this, Crafty.stage.elem, "mousemove", scroll;
-                Crafty.addEvent this, Crafty.stage.elem, "mouseup", () ->
-                    Crafty.removeEvent this, Crafty.stage.elem, "mousemove", scroll
     ]
