@@ -204,14 +204,22 @@ class Game.Level extends Game.Loggable
     ###
     Get a random (unoccupied) coordinate in this level.
     ###
-    getRandomCoordinate: () ->
-        # @TODO Make the random coordinate not so random
-        # and ensure the returned coordinate is not actually being occupied
-            [
-                Game.helpers.randomIntBetween 1, (@size[0] - 1)
-                Game.helpers.randomIntBetween 1, (@size[1] - 1)
-                Game.helpers.randomIntBetween 1, (@size[2] - 1)
-            ]
+    getRandomCoordinate: (validate = true, maxRetries = 10, tryCounter = 0) ->
+        # Generate a random coordinate
+        loc = [
+            Game.helpers.randomIntBetween 0, (@size[0] - 1)
+            Game.helpers.randomIntBetween 0, (@size[1] - 1)
+            Game.helpers.randomIntBetween 0, (@size[2] - 1)
+        ]
+
+        # Potentially validate
+        if validate and @world[loc[0]][loc[1]][loc[2]]
+            if tryCounter < maxRetries
+                return @getRandomCoordinate validate, maxRetries, tryCounter + 1
+
+            return null
+
+        return loc
 
     ###
     Get state as a plain object.
@@ -681,6 +689,8 @@ Game.onRoomJoin = (clientData, roomName, socket) ->
         # and link the client and the player entity
         if clientData.type == Game.ClientType.PLAYER
             entity = new Game.SnakeEntity
+            entity.position = room.level.getRandomCoordinate()
+
             client.entity = entity
             room.addEntity entity
 
