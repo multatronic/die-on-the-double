@@ -208,9 +208,9 @@ class Game.Level extends Game.Loggable
         # @TODO Make the random coordinate not so random
         # and ensure the returned coordinate is not actually being occupied
             [
-                Game.helpers.randomIntBetween 0, (@size[0] - 1)
-                Game.helpers.randomIntBetween 0, (@size[1] - 1)
-                Game.helpers.randomIntBetween 0, (@size[2] - 1)
+                Game.helpers.randomIntBetween 1, (@size[0] - 1)
+                Game.helpers.randomIntBetween 1, (@size[1] - 1)
+                Game.helpers.randomIntBetween 1, (@size[2] - 1)
             ]
 
     ###

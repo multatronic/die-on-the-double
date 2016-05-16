@@ -113,6 +113,7 @@ angular
                             entity.craftyEntities.push (placeTile position, entitySpriteMap[entity.type])
                         # If the entity exists, correct its positioning
                         else
+                            entity.craftyEntities[i].attr 'z', 1000
                             placeEntity entity.craftyEntities[i], position
 
                     # Remove each crafty entity which no is no longer required
@@ -153,16 +154,58 @@ angular
 
             placeTile = (position, type) ->
                 tile = Crafty.e "2D, DOM, #{type}, Mouse"
-                       .attr 'z', 0
+                       .attr 'z', -1000
+                       .attr 'alt', false
                        .bind 'socket_status_update', (e) ->
-                          updatePosition = e.entities[0].position
-                          if updatePosition[0] == position[0] and updatePosition[1] == position[1] and this.has 'floor'
-                            this.sprite 5, 0
-                          if updatePosition[1] == position[1] and updatePosition[2] == position[2] and this.has 'left'
-                            $log.debug 'left alt', e.entities[0].position, position
-                            this.sprite 6, 0
-                          if updatePosition[0] == position[0] and updatePosition[2] == position[2] and this.has 'right'
-                            this.sprite 7, 0
+                          merged = []
+                          for entity in e.entities
+                            merged.concat entity.positionHistory
+                            merged.push entity.position
+
+                          matchesFloor = false
+                          matchesLeft = false
+                          matchesRight = false
+                          isAlt = this.attr 'alt'
+
+                          for updatePosition in merged
+                            if updatePosition[0] == position[0] and updatePosition[1] == position[1]
+                              matchesFloor = true
+                              break
+                            if updatePosition[1] == position[1] and updatePosition[2] == position[2]
+                              matchesLeft = true
+                              break
+                            if updatePosition[0] == position[0] and updatePosition[2] == position[2]
+                              matchesRight = true
+                              break
+
+                          # change the tile to an alternate version if it's on two of the entity's axis'
+                          # and flip it back to normal if it's not anymore
+                          if this.has 'floor'
+                            if matchesFloor
+                              if not isAlt
+                                this.sprite 5, 0 # floor alt
+                                this.attr 'alt', true
+                            else if isAlt
+                              this.attr 'alt', false
+                              this.sprite 2, 0
+
+                          if this.has 'left'
+                            if matchesLeft
+                              if not isAlt
+                                this.sprite 6, 0 # left alt
+                                this.attr 'alt', true
+                            else if isAlt
+                              this.attr 'alt', false
+                              this.sprite 3, 0
+
+                          if this.has 'right'
+                            if matchesRight
+                              if not isAlt
+                                this.sprite 7, 0 # right alt
+                                this.attr 'alt', true
+                            else if isAlt
+                              this.attr 'alt', false
+                              this.sprite 4, 0
 
                 placeEntity tile, position
                 return tile
