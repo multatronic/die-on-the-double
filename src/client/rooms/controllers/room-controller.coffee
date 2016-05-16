@@ -159,7 +159,7 @@ angular
                        .bind 'socket_status_update', (e) ->
                           merged = []
                           for entity in e.entities
-                            merged.concat entity.positionHistory
+                            merged = merged.concat entity.positionHistory
                             merged.push entity.position
 
                           matchesFloor = false
