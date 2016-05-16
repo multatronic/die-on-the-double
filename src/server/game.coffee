@@ -381,6 +381,7 @@ class Game.Room extends Game.Loggable
             name: @name
             difficulty: @difficulty
             level: @level.getAsObject()
+            clients: (v.getAsObject() for k, v of @clients)
             entities: (v.getAsObject() for k, v of @entities)
             state: @state
 
@@ -419,7 +420,7 @@ class Game.Client extends Game.Loggable
     ###
     {@inheritDoc}
     ###
-    constructor: (@id, @name, @type, @socket) ->
+    constructor: (@id, @name, @socket) ->
         super
 
     ###
@@ -427,6 +428,28 @@ class Game.Client extends Game.Loggable
     ###
     handle: (event) ->
         Streamy.emit event.constructor.type, event, @socket
+
+    ###
+    Get state as a plain object.
+    ###
+    getAsObject: () ->
+            id: @id
+            name: @name
+            type: @constructor.name
+
+
+class Game.PlayerClient extends Game.Client
+
+    ###
+    Game player/controller client.
+    ###
+
+
+class Game.DisplayClient extends Game.Client
+
+    ###
+    Game display client.
+    ####
 
 
 class Game.Entity extends Game.Loggable
@@ -662,7 +685,7 @@ class Game.PhysicsEngine extends Game.StartStoppable
 
         # Dispatch status update to all attached
         # attached clients of type 'DISPLAY'
-        for id, client of room.clients when client.type == Game.ClientType.DISPLAY
+        for id, client of room.clients when client.constructor.name == Game.DisplayClient.name
             client.handle status
 
 
@@ -683,16 +706,18 @@ Game.onRoomJoin = (clientData, roomName, socket) ->
     client = room.findClient clientData.id
 
     if not client
-        client = new Game.Client clientData.id, clientData.name, clientData.type, socket
-
         # If this client is a player, create a player entity
         # and link the client and the player entity
         if clientData.type == Game.ClientType.PLAYER
+            client = new Game.PlayerClient clientData.id, clientData.name, socket
+
             entity = new Game.SnakeEntity
             entity.position = room.level.getRandomCoordinate()
 
             client.entity = entity
             room.addEntity entity
+        else if clientData.type == Game.ClientType.DISPLAY
+             client = new Game.DisplayClient clientData.id, clientData.name, socket
 
         room.addClient client
 

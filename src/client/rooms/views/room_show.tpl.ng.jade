@@ -1,1 +1,5 @@
 #crafty-canvas
+
+ul
+    li(ng-repeat='client in room.clients | filter: {type: "PlayerClient"}')
+        span {{ client.name }}

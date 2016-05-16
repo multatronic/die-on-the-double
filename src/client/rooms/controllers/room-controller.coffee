@@ -11,6 +11,7 @@ angular
         '$window'
         ($scope, $stateParams, $log, $rootScope, $timeout, $mdToast, DataSocket, $window) ->
             roomId = $stateParams.id
+            $scope.room = null
             clientType = 'display'
             level = null
             @remoteEntities = {}
@@ -34,6 +35,8 @@ angular
                 $mdToast.showSimple "A display was disconnected."
 
             $rootScope.$on 'data_socket.events.status_update', (event, data) =>
+                $scope.room = data
+
                 if level == null
                     initLevel data.level.size
 
