@@ -143,9 +143,7 @@ angular
                 Crafty.viewport.init $window.innerWidth, $window.innerHeight - 80, document.getElementById('crafty-canvas')
 
                 if level
-                    # @TODO Figure out why we need to do (x / 2) - 2, (y / 2) + 2
-                    # in order to center the level properly
-                    center = [(level._tiles.length / 2) - 2, (level._tiles[0].length / 2) + 2]
+                    center = [(level._tiles.length / 2) - 1, (level._tiles[0].length / 2)]
                     level.centerAt center[0], center[1]
 
             placeEntity = (entity, position) ->
