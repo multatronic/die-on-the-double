@@ -127,15 +127,14 @@ angular
                 zSize = levelDimensions[2]
                 level = Crafty.diamondIso.init 30, 30, xSize, ySize
 
-                # using zSize + 1 here breaks the apple grabbing for some reason?
-                for x in [xSize...0] # back to front to prevent overlap
-                    for y in [1...ySize + 1]
-                        for z in [1...zSize + 1]
-                            if x == 1
+                for x in [0...xSize]
+                    for y in [0...ySize]
+                        for z in [0...zSize]
+                            if x == 0
                                 placeTile [x, y, z], 'left'
-                            if y == 1
+                            if y == 0
                                 placeTile [x, y, z], 'right'
-                            if z == 1
+                            if z == 0
                                 placeTile [x, y, z], 'floor'
 
                 correctLevelSizing()
